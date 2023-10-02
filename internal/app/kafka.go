@@ -2,14 +2,12 @@ package app
 
 import (
 	"context"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
-	"gitlab.enkod.tech/pkg/kafka/entity"
-	"gitlab.enkod.tech/pkg/kafka/logger"
+	kafka "gitlab.enkod.tech/pkg/kafka"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
-	logger.SetDefaultLogger("debug")
+	kafka.SetDefaultLogger("debug")
 
 	const (
 		testTopic = "test_topic"
@@ -17,47 +15,48 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 	//broker clients
 	var (
-		k = kafkaClient.NewBrokerClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
+		k = kafka.NewBrokerClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
 	)
 
 	testConsumer(testTopic, k)
 	k.Pre(
 		getTestMiddleware(),
 	)
-	kafkaClient.Start(k)
+	kafka.Start(k)
 	testProducer(testTopic, k)
 	testProducer(testTopic, k)
 	select {}
 }
 
-func getTestMiddleware() entity.MiddlewareFunc {
-	return func(next entity.MessageHandler) entity.MessageHandler {
-		return func(ctx context.Context, message entity.CustomMessage) error {
-			logger.GetLogger().Info("got middleware")
+func getTestMiddleware() kafka.MiddlewareFunc {
+	return func(next kafka.MessageHandler) kafka.MessageHandler {
+		return func(ctx context.Context, message kafka.CustomMessage) error {
+			kafka.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
 	}
 }
 
-func testConsumer(topic string, k entity.BrokerClient) {
-	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
+func testConsumer(topic string, k kafka.Client) {
+	k.Subscribe(testHandler, 1, &kafka.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,
 	})
 }
 
-func testProducer(topic string, k entity.BrokerClient) {
-	err := k.Publish(context.Background(), &entity.Message{
-		Topic: topic,
-		Body:  []byte("test"),
-	})
+func testProducer(topic string, k kafka.Client) {
+	err := k.Publish(context.Background(), topic, struct {
+		Data string `json:"data"`
+	}{Data: "test body"},
+		nil,
+	)
 	if err != nil {
-		logger.GetLogger().WithError(err).Error("produce err")
+		kafka.GetLogger().WithError(err).Error("produce err")
 	}
 }
 
 func testHandler(ctx context.Context, msg []byte) error {
-	logger.GetLogger().Info(string(msg))
+	kafka.GetLogger().Info(string(msg))
 	return nil
 }

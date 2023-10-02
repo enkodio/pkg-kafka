@@ -1,4 +1,4 @@
-package entity
+package kafka_client
 
 type Semaphore struct {
 	c chan struct{}

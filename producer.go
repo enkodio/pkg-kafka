@@ -1,4 +1,4 @@
-package client
+package kafka_client
 
 import (
 	"context"
@@ -6,8 +6,6 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"gitlab.enkod.tech/pkg/kafka/entity"
-	"gitlab.enkod.tech/pkg/kafka/logger"
 	"time"
 )
 
@@ -29,7 +27,7 @@ func newProducer(config kafka.ConfigMap) *producer {
 }
 
 func (p *producer) initProducer() (err error) {
-	log := logger.GetLogger()
+	log := GetLogger()
 	p.kafkaProducer, err = kafka.NewProducer(&p.config)
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
@@ -46,7 +44,7 @@ func (p *producer) stop() {
 }
 
 func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
-	log := logger.FromContext(ctx)
+	log := FromContext(ctx)
 	for {
 		err := p.kafkaProducer.Produce(message, deliveryChannel)
 		if err != nil {
@@ -65,14 +63,14 @@ func (p *producer) produce(ctx context.Context, message *kafka.Message, delivery
 	return nil
 }
 
-func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := kafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
 		return errors.Wrap(err, "cant init kafka admin client")
 	}
 	defer adminClient.Close()
-	log := logger.GetLogger()
+	log := GetLogger()
 	specifications := make([]kafka.TopicSpecification, 0, len(topics))
 	for _, topic := range topics {
 		specification := kafka.TopicSpecification{
@@ -98,7 +96,7 @@ func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error)
 	return nil
 }
 
-func (p *producer) publish(ctx context.Context, message entity.Message) (err error) {
+func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	if p.closed {
 		return errors.New("producer was closed")
 	}
@@ -116,8 +114,8 @@ func (p *producer) publish(ctx context.Context, message entity.Message) (err err
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message entity.Message, deliveryChannel chan kafka.Event) {
-	log := logger.FromContext(ctx)
+func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
+	log := FromContext(ctx)
 	e := <-deliveryChannel
 	close(deliveryChannel)
 	switch event := e.(type) {

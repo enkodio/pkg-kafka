@@ -1,4 +1,4 @@
-package entity
+package kafka_client
 
 import "github.com/confluentinc/confluent-kafka-go/kafka"
 
@@ -16,12 +16,12 @@ type Message struct {
 	Topic   string  `json:"topic"`
 }
 
-func NewMessage(message CustomMessage) Message {
+func NewMessage(topic string, body []byte, headers []Header, key string) Message {
 	return Message{
-		Key:     message.GetKey(),
-		Headers: message.GetHeaders(),
-		Body:    message.GetBody(),
-		Topic:   message.GetTopic(),
+		Topic:   topic,
+		Body:    body,
+		Headers: headers,
+		Key:     key,
 	}
 }
 

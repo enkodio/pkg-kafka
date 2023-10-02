@@ -1,4 +1,4 @@
-package client
+package kafka_client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"

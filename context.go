@@ -1,4 +1,4 @@
-package logger
+package kafka_client
 
 import (
 	"context"

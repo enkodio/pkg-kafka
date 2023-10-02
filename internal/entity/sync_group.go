@@ -39,10 +39,6 @@ func (s *SyncGroup) Close() {
 	return
 }
 
-func (s *SyncGroup) IsClosed() bool {
-	return s.closed
-}
-
 func (s *SyncGroup) IsDone() <-chan struct{} {
 	return s.done
 }

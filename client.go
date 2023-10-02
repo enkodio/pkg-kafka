@@ -1,10 +1,10 @@
-package client
+package kafka_client
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"gitlab.enkod.tech/pkg/kafka/entity"
-	"gitlab.enkod.tech/pkg/kafka/logger"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -30,8 +30,8 @@ func NewBrokerClient(
 	producerConfig kafka.ConfigMap,
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
-) entity.BrokerClient {
-	logger.SetDefaultLogger("debug")
+) Client {
+	SetDefaultLogger("debug")
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,
@@ -40,8 +40,8 @@ func NewBrokerClient(
 	}
 }
 
-func Start(client entity.BrokerClient) {
-	log := logger.GetLogger()
+func Start(client Client) {
+	log := GetLogger()
 	log.Info("START CONNECTING TO KAFKA")
 	err := client.Start()
 	if err != nil {
@@ -64,7 +64,7 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...entity.MiddlewareFunc) {
+func (c *client) Pre(mw ...MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
@@ -78,16 +78,20 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, customMessage entity.CustomMessage) (err error) {
-	message := entity.NewMessage(customMessage)
+func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers []Header) (err error) {
+	dataB, err := json.Marshal(data)
+	if err != nil {
+		return errors.Wrap(err, "cant marshal data")
+	}
+	message := NewMessage(topic, dataB, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.SetHeader(entity.ServiceNameHeaderKey, []byte(c.serviceName))
+	message.Headers.SetHeader(ServiceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h entity.Handler, countConsumers int, specification entity.Specifications) {
-	log := logger.GetLogger()
-	topicSpecification := entity.NewTopicSpecifications(specification)
+func (c *client) Subscribe(h Handler, countConsumers int, specification Specifications) {
+	log := GetLogger()
+	topicSpecification := NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)

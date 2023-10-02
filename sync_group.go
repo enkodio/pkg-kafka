@@ -1,4 +1,4 @@
-package entity
+package kafka_client
 
 import (
 	"sync"

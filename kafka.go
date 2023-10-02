@@ -1,4 +1,4 @@
-package entity
+package kafka_client
 
 import (
 	"context"
@@ -11,11 +11,11 @@ type (
 
 type Handler func(ctx context.Context, message []byte) error
 
-type BrokerClient interface {
+type Client interface {
 	Start() error
 	Pre(mw ...MiddlewareFunc)
 	StopSubscribe()
 	StopProduce()
-	Publish(context.Context, CustomMessage) error
+	Publish(context.Context, string, interface{}, []Header) error
 	Subscribe(Handler, int, Specifications)
 }

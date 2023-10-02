@@ -52,7 +52,7 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.Mi
 	}
 	for {
 		select {
-		case <-syncGroup.IsClosed():
+		case <-syncGroup.IsDone():
 			return nil
 		default:
 			msg, err := c.ReadMessage(readTimeout)

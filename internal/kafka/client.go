@@ -86,7 +86,8 @@ func (c *client) StopProduce() {
 }
 
 func (c *client) Publish(ctx context.Context, message entity.Message) (err error) {
-	return c.publish(ctx, message)
+	message.Topic = c.topicPrefix + message.Topic
+	return c.producer.publish(ctx, message)
 }
 
 func (c *client) Subscribe(h entity.Handler, countConsumers int, spec entity.TopicSpecifications) {
@@ -97,54 +98,5 @@ func (c *client) Subscribe(h entity.Handler, countConsumers int, spec entity.Top
 		if err != nil {
 			log.Fatal(err, "can't create new consumer")
 		}
-	}
-}
-
-func (c *client) publish(ctx context.Context, message entity.Message) (err error) {
-	message.Topic = c.topicPrefix + message.Topic
-	deliveryChannel := make(chan kafka.Event)
-
-	go c.handleDelivery(ctx, message, deliveryChannel)
-
-	err = c.producer.produce(
-		ctx,
-		message.ToKafkaMessage(),
-		deliveryChannel,
-	)
-	if err != nil {
-		return err
-	}
-	return
-}
-
-func (c *client) handleDelivery(ctx context.Context, message entity.Message, deliveryChannel chan kafka.Event) {
-	log := logger.FromContext(ctx)
-	e := <-deliveryChannel
-	close(deliveryChannel)
-	switch event := e.(type) {
-	case *kafka.Message:
-		if event.TopicPartition.Error != nil {
-			kafkaErr := event.TopicPartition.Error.(kafka.Error)
-			// Если retriable, то ошибка временная, нужно пытаться переотправить снова, если нет, то ошибка nonretriable, просто логируем
-			if kafkaErr.IsRetriable() {
-				log.WithError(kafkaErr).
-					Errorf("kafka produce retriable error, try again send topic: %v, message: %v",
-						message.Topic, string(message.Body))
-				err := c.publish(ctx, message)
-				if err != nil {
-					log.WithError(err).
-						Errorf("Cant publish by kafka, topic: %v, message: %v",
-							message.Topic, string(message.Body))
-				}
-			} else {
-				log.WithError(kafkaErr).
-					Errorf("kafka produce nonretriable error, can't send topic: %v, message: %v. Is fatal: %v",
-						message.Topic, string(message.Body), kafkaErr.IsFatal())
-			}
-		}
-	case kafka.Error:
-		// Общие пользовательские ошибки, клиент сам пытается переотправить, просто логируем
-		log.WithError(event).
-			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, string(message.Body))
 	}
 }

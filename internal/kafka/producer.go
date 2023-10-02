@@ -95,6 +95,11 @@ func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error)
 		return errors.Wrapf(err, "%v: cant create topics", err.Error())
 	}
 	for _, v := range result {
+		if kafkaErr, ok := errToKafka(v.Error); ok {
+			if kafkaErr.Code() == kafka.ErrTopicAlreadyExists {
+				continue
+			}
+		}
 		// Если такой топик уже есть, то будет ошибка внутри структуры, если ошибки нет, то в структуре будет "Success"
 		log.Infof("%v: %v", v.Topic, v.Error.String())
 	}
@@ -103,7 +108,6 @@ func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error)
 
 func (p *producer) publish(ctx context.Context, message entity.Message) (err error) {
 	deliveryChannel := make(chan kafka.Event)
-
 	go p.handleDelivery(ctx, message, deliveryChannel)
 
 	err = p.produce(

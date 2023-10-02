@@ -64,8 +64,10 @@ func (c *consumers) stopConsumers() {
 
 	for i := range c.consumers {
 		_, err := c.consumers[i].Commit()
-		if err != nil {
-			log.WithError(err).Errorf("cant commit offset for topic: %s", err.Error())
+		if kafkaErr, ok := errToKafka(err); ok {
+			if kafkaErr.Code() != kafka.ErrNoOffset {
+				log.WithError(err).Errorf("cant commit offset for topic: %s", err.Error())
+			}
 		}
 		// Отписка от назначенных топиков
 		err = c.consumers[i].Unsubscribe()

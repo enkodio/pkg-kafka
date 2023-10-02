@@ -33,21 +33,23 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 		return errors.Wrap(err, "cant create kafka consumer")
 	}
 	// Подписываем консумера на топик
-	err = kafkaConsumer.Subscribe(c.Topic, getRebalanceCb())
+	err = kafkaConsumer.Subscribe(c.Topic, c.getRebalanceCb())
 	if err != nil {
 		return errors.Wrap(err, "cant subscribe kafka consumer")
 	}
 	c.Consumer = kafkaConsumer
 	return nil
 }
-func getRebalanceCb() kafka.RebalanceCb {
+
+func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 	return func(c *kafka.Consumer, event kafka.Event) error {
 		logger.GetLogger().Infof("Rebalanced: %v; rebalanced protocol: %v;",
-			event,
+			event.String(),
 			c.GetRebalanceProtocol())
 		return nil
 	}
 }
+
 func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы

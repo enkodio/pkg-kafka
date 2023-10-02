@@ -5,9 +5,8 @@ import (
 )
 
 type (
-	MessageHandler      func(ctx context.Context, message Message) error
-	MiddlewareFunc      func(next MessageHandler) MessageHandler
-	MiddlewareFunctions []MiddlewareFunc
+	MessageHandler func(ctx context.Context, message Message) error
+	MiddlewareFunc func(next MessageHandler) MessageHandler
 )
 
 type Handler func(ctx context.Context, message []byte) error

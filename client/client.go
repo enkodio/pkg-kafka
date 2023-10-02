@@ -80,6 +80,7 @@ func (c *client) StopProduce() {
 func (c *client) Publish(ctx context.Context, customMessage entity.CustomMessage) (err error) {
 	message := entity.NewMessage(customMessage)
 	message.Topic = c.topicPrefix + message.Topic
+	message.Headers.SetHeader(entity.ServiceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)
 }
 

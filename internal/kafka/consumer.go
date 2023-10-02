@@ -57,7 +57,8 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.Mi
 		default:
 			msg, err := c.ReadMessage(readTimeout)
 			if err != nil {
-				if kafkaErr, ok := err.(kafka.Error); ok {
+				var kafkaErr kafka.Error
+				if errors.As(err, &kafkaErr) {
 					// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
 					if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
 						continue

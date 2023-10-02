@@ -26,8 +26,6 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	)
 	kafkaClient.Start(k)
 	testProducer(testTopic, k)
-	k.StopSubscribe()
-	k.StopProduce()
 	testProducer(testTopic, k)
 	select {}
 }

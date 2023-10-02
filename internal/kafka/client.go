@@ -3,8 +3,8 @@ package kafka
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"kafka_client/internal/entity"
-	"kafka_client/pkg/logger"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/internal/logger"
 	"time"
 )
 

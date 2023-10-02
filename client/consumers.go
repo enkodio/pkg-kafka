@@ -1,10 +1,10 @@
-package client
+package kafka
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/pkg/errors"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	logger2 "gitlab.enkod.tech/pkg/kafka/internal/logger"
 	"sync"
 	"time"
 )
@@ -12,7 +12,7 @@ import (
 type consumers struct {
 	config    kafka.ConfigMap
 	consumers []*consumer
-	mwFuncs   []MiddlewareFunc
+	mwFuncs   []entity.MiddlewareFunc
 	syncGroup *entity.SyncGroup
 }
 
@@ -24,9 +24,9 @@ func newConsumers(config kafka.ConfigMap) consumers {
 	}
 }
 
-func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
+func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecifications {
 	topicsMap := make(map[string]struct{}, len(c.consumers))
-	topics := make([]TopicSpecifications, 0, len(c.consumers))
+	topics := make([]entity.TopicSpecifications, 0, len(c.consumers))
 
 	for _, consumer := range c.consumers {
 		if _, ok := topicsMap[consumer.Topic]; ok {
@@ -38,7 +38,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler Handler, topicSpecification TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler entity.Handler, topicSpecification entity.TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {
@@ -59,7 +59,7 @@ func (c *consumers) createKafkaConsumers() error {
 }
 
 func (c *consumers) stopConsumers() {
-	log := logger.GetLogger()
+	log := logger2.GetLogger()
 	c.syncGroup.Close()
 
 	for i := range c.consumers {
@@ -98,12 +98,12 @@ func (c *consumers) initConsumers() {
 		}(cns, c.syncGroup)
 	}
 	c.syncGroup.Start()
-	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")
+	logger2.GetLogger().Info("KAFKA CONSUMERS IS READY")
 	return
 }
 
 func (c *consumers) reconnect() {
-	log := logger.GetLogger()
+	log := logger2.GetLogger()
 	log.Debugf("start reconnecting consumers")
 	// Стопаем консумеры
 	c.stopConsumers()
@@ -116,7 +116,7 @@ func (c *consumers) reconnect() {
 	for {
 		err := c.createKafkaConsumers()
 		if err != nil {
-			logger.FromContext(nil).WithError(err).Error("cant init consumers")
+			logger2.FromContext(nil).WithError(err).Error("cant init consumers")
 			time.Sleep(reconnectTime)
 			continue
 		}

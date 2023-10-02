@@ -2,19 +2,22 @@ package app
 
 import (
 	"context"
-	kafkaClient "github.com/enkodio/pkg-kafka/client"
-	configEntity "github.com/enkodio/pkg-kafka/pkg/config/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka/internal/kafka"
+	"gitlab.enkod.tech/pkg/kafka/internal/logger"
+	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
+	logger.SetDefaultLogger("debug")
+
 	const (
 		testTopic = "test_topic"
 	)
 
 	//broker clients
 	var (
-		k = kafkaClient.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
+		k = kafkaClient.NewBrokerClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
 	)
 
 	testConsumer(testTopic, k)
@@ -23,32 +26,33 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	)
 	kafkaClient.Start(k)
 	testProducer(testTopic, k)
-	testProducer(testTopic, k)
+	k.StopSubscribe()
 	k.StopProduce()
 	testProducer(testTopic, k)
 	select {}
 }
 
-func getTestMiddleware() kafkaClient.MiddlewareFunc {
-	return func(next kafkaClient.MessageHandler) kafkaClient.MessageHandler {
-		return func(ctx context.Context, message kafkaClient.Message) error {
+func getTestMiddleware() entity.MiddlewareFunc {
+	return func(next entity.MessageHandler) entity.MessageHandler {
+		return func(ctx context.Context, message entity.Message) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
 	}
 }
 
-func testConsumer(topic string, k kafkaClient.Client) {
-	k.Subscribe(testHandler, 1, &kafkaClient.TopicSpecifications{
+func testConsumer(topic string, k entity.BrokerClient) {
+	k.Subscribe(testHandler, 1, entity.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,
 	})
 }
 
-func testProducer(topic string, k kafkaClient.Client) {
-	err := k.Publish(context.Background(), topic, "test", map[string][]byte{
-		"test": []byte("test"),
+func testProducer(topic string, k entity.BrokerClient) {
+	err := k.Publish(context.Background(), entity.Message{
+		Topic: topic,
+		Body:  []byte("test"),
 	})
 	if err != nil {
 		logger.GetLogger().WithError(err).Error("produce err")

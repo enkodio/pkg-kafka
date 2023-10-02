@@ -5,8 +5,8 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"kafka_client/internal/entity"
-	"kafka_client/pkg/logger"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/internal/logger"
 )
 
 type consumer struct {

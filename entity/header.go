@@ -14,7 +14,7 @@ type MessageHeader struct {
 	Value []byte `json:"value"`
 }
 
-func NewByKafkaHeaders(kafkaHeaders []kafka.Header) []Header {
+func NewByKafkaHeaders(kafkaHeaders []kafka.Header) Headers {
 	var headers = make([]Header, len(kafkaHeaders))
 	for i := 0; i < len(kafkaHeaders); i++ {
 		headers[i] = &MessageHeader{

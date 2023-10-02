@@ -4,7 +4,7 @@ import "github.com/confluentinc/confluent-kafka-go/kafka"
 
 type CustomMessage interface {
 	GetKey() string
-	GetHeaders() []Header
+	GetHeaders() Headers
 	GetBody() []byte
 	GetTopic() string
 }
@@ -37,7 +37,7 @@ func (m *Message) GetKey() string {
 	return m.Key
 }
 
-func (m *Message) GetHeaders() []Header {
+func (m *Message) GetHeaders() Headers {
 	return m.Headers
 }
 

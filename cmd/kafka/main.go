@@ -2,8 +2,8 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-	"kafka_client/internal/app"
-	"kafka_client/pkg/config"
+	"gitlab.enkod.tech/pkg/kafka/internal/app"
+	"gitlab.enkod.tech/pkg/kafka/pkg/config"
 	"os"
 )
 

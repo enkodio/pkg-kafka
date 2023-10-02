@@ -1,4 +1,4 @@
-module kafka_client
+module gitlab.enkod.tech/pkg/kafka
 
 go 1.21
 

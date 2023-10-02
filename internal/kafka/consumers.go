@@ -3,8 +3,8 @@ package kafka
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
-	"kafka_client/internal/entity"
-	"kafka_client/pkg/logger"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	logger2 "gitlab.enkod.tech/pkg/kafka/internal/logger"
 	"sync"
 	"time"
 )
@@ -59,7 +59,7 @@ func (c *consumers) createKafkaConsumers() error {
 }
 
 func (c *consumers) stopConsumers() {
-	log := logger.GetLogger()
+	log := logger2.GetLogger()
 	c.syncGroup.Close()
 
 	for i := range c.consumers {
@@ -98,12 +98,12 @@ func (c *consumers) initConsumers() {
 		}(cns, c.syncGroup)
 	}
 	c.syncGroup.Start()
-	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")
+	logger2.GetLogger().Info("KAFKA CONSUMERS IS READY")
 	return
 }
 
 func (c *consumers) reconnect() {
-	log := logger.GetLogger()
+	log := logger2.GetLogger()
 	log.Debugf("start reconnecting consumers")
 	// Стопаем консумеры
 	c.stopConsumers()
@@ -116,7 +116,7 @@ func (c *consumers) reconnect() {
 	for {
 		err := c.createKafkaConsumers()
 		if err != nil {
-			logger.FromContext(nil).WithError(err).Error("cant init consumers")
+			logger2.FromContext(nil).WithError(err).Error("cant init consumers")
 			time.Sleep(reconnectTime)
 			continue
 		}

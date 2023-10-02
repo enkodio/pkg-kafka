@@ -3,8 +3,8 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 	"io/ioutil"
-	"kafka_client/pkg/config/entity"
 	"log"
 )
 

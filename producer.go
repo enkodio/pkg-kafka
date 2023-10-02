@@ -12,7 +12,7 @@ import (
 type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
-	closed        bool
+	syncGroup     *SyncGroup
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -22,7 +22,8 @@ func newProducer(config kafka.ConfigMap) *producer {
 	config["queue.buffering.max.messages"] = int(pyraconv.ToInt64(config["queue.buffering.max.messages"]))
 	config["linger.ms"] = int(pyraconv.ToInt64(config["linger.ms"]))
 	return &producer{
-		config: config,
+		config:    config,
+		syncGroup: NewSyncGroup(),
 	}
 }
 
@@ -32,15 +33,14 @@ func (p *producer) initProducer() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
 	}
-	p.closed = false
 	log.Info("KAFKA PRODUCER IS READY")
 	return nil
 }
 
 func (p *producer) stop() {
+	p.syncGroup.Close()
 	p.kafkaProducer.Flush(flushTimeout)
 	p.kafkaProducer.Close()
-	p.closed = true
 }
 
 func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
@@ -97,10 +97,11 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 }
 
 func (p *producer) publish(ctx context.Context, message Message) (err error) {
-	if p.closed {
+	if p.syncGroup.closed {
 		return errors.New("producer was closed")
 	}
 	deliveryChannel := make(chan kafka.Event)
+	p.syncGroup.Add(1)
 	go p.handleDelivery(ctx, message, deliveryChannel)
 
 	err = p.produce(
@@ -115,6 +116,7 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 }
 
 func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
+	defer p.syncGroup.Done()
 	log := FromContext(ctx)
 	e := <-deliveryChannel
 	close(deliveryChannel)

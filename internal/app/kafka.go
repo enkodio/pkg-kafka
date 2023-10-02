@@ -25,6 +25,8 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	kafka.Start(k)
 	testProducer(testTopic, k)
 	testProducer(testTopic, k)
+	k.StopProduce()
+	testProducer(testTopic, k)
 	select {}
 }
 
@@ -46,9 +48,7 @@ func testConsumer(topic string, k kafka.Client) {
 }
 
 func testProducer(topic string, k kafka.Client) {
-	err := k.Publish(context.Background(), topic, struct {
-		Data string `json:"data"`
-	}{Data: "test body"},
+	err := k.Publish(context.Background(), topic, nil,
 		nil,
 	)
 	if err != nil {

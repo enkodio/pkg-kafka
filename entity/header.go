@@ -2,7 +2,6 @@ package entity
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/pkg/errors"
 )
 
 type Header interface {
@@ -47,11 +46,11 @@ func (h Headers) ToKafkaHeaders() []kafka.Header {
 	return headers
 }
 
-func (h Headers) GetValueByKey(key string) ([]byte, error) {
+func (h Headers) GetValueByKey(key string) []byte {
 	for _, header := range h {
 		if header.GetKey() == key {
-			return header.GetValue(), nil
+			return header.GetValue()
 		}
 	}
-	return []byte(""), errors.New("cant found key")
+	return nil
 }

@@ -10,10 +10,10 @@ type CustomMessage interface {
 }
 
 type Message struct {
-	Key     string   `json:"key"`
-	Headers []Header `json:"headers"`
-	Body    []byte   `json:"body"`
-	Topic   string   `json:"topic"`
+	Key     string  `json:"key"`
+	Headers Headers `json:"headers"`
+	Body    []byte  `json:"body"`
+	Topic   string  `json:"topic"`
 }
 
 func NewMessage(message CustomMessage) Message {
@@ -26,16 +26,8 @@ func NewMessage(message CustomMessage) Message {
 }
 
 func NewByKafkaMessage(message *kafka.Message) CustomMessage {
-	var headers = make([]Header, len(message.Headers))
-	for i := 0; i < len(message.Headers); i++ {
-		headers[i] = &MessageHeader{
-			Key:   message.Headers[i].Key,
-			Value: message.Headers[i].Value,
-		}
-	}
-
 	return &Message{
-		Headers: headers,
+		Headers: NewByKafkaHeaders(message.Headers),
 		Body:    message.Value,
 		Topic:   *message.TopicPartition.Topic,
 	}
@@ -62,19 +54,11 @@ func (m *Message) GetBodyAsString() string {
 }
 
 func (m *Message) ToKafkaMessage() *kafka.Message {
-	var headers = make([]kafka.Header, len(m.Headers))
-	for i := 0; i < len(m.Headers); i++ {
-		headers[i] = kafka.Header{
-			Key:   m.Headers[i].GetKey(),
-			Value: m.Headers[i].GetValue(),
-		}
-	}
-
 	return &kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &m.Topic,
 			Partition: kafka.PartitionAny},
 		Value:   m.Body,
-		Headers: headers,
+		Headers: m.Headers.ToKafkaHeaders(),
 	}
 }

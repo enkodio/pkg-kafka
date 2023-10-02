@@ -2,14 +2,21 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
-	"github.com/pkg/errors"
+	"gitlab.enkod.tech/pkg/kafka/entity"
+	"gitlab.enkod.tech/pkg/kafka/logger"
 	"time"
 )
 
 const (
+	// Максимальное количество реплик каждой партиции (равно количеству брокеров в кластере)
+	maxReplicationFactor = 3
+
+	// Значение реплик каждой партиции по умолчанию
+	defaultReplicationFactor = 1
+	// Значение партиций для топика по умолчанию
+	defaultNumPartitions = 3
+
 	// Время ожидания, пока очередь в буфере продусера переполнена
 	queueFullWaitTime = time.Second * 5
 
@@ -27,18 +34,25 @@ type client struct {
 	producer    *producer
 }
 
-func newClient(
+func NewBrokerClient(
 	producerConfig kafka.ConfigMap,
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
-	prefix string,
-) Client {
+) entity.BrokerClient {
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,
 		producer:    newProducer(producerConfig),
 		consumers:   newConsumers(consumerConfig),
-		topicPrefix: prefix,
+	}
+}
+
+func Start(client entity.BrokerClient) {
+	log := logger.GetLogger()
+	log.Info("START CONNECTING TO KAFKA")
+	err := client.Start()
+	if err != nil {
+		log.Fatal(err, "can't start kafka client")
 	}
 }
 
@@ -57,7 +71,7 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...MiddlewareFunc) {
+func (c *client) Pre(mw ...entity.MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
@@ -71,37 +85,18 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
-	var dataB []byte
-	if dataS, ok := data.(string); ok {
-		dataB = []byte(dataS)
-	} else {
-		dataB, err = json.Marshal(data)
-		if err != nil {
-			return errors.Wrap(err, "cant marshal data")
-		}
-	}
-	return c.publishByte(ctx, topic, dataB, headers...)
-}
-
-func (c *client) publishByte(ctx context.Context, topic string, data []byte, headers ...map[string][]byte) (err error) {
-	message := NewMessage(topic, data, NewMessageHeaders(headers...), "")
+func (c *client) Publish(ctx context.Context, message entity.Message) (err error) {
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.setServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h Handler, countConsumers int, specification Specifications) {
+func (c *client) Subscribe(h entity.Handler, countConsumers int, spec entity.TopicSpecifications) {
 	log := logger.GetLogger()
-	topicSpecification := NewTopicSpecifications(specification)
-	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
+	spec.Topic = c.topicPrefix + spec.Topic
 	for j := 0; j < countConsumers; j++ {
-		err := c.consumers.addNewConsumer(h, topicSpecification)
+		err := c.consumers.addNewConsumer(h, spec)
 		if err != nil {
 			log.Fatal(err, "can't create new consumer")
 		}
 	}
-}
-func (c *client) PrePublish(f Pre) {
-	c.producer.prePublish = append(c.producer.prePublish, f)
 }

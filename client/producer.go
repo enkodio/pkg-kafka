@@ -4,18 +4,17 @@ import (
 	"context"
 	"github.com/CossackPyra/pyraconv"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"gitlab.enkod.tech/pkg/kafka/entity"
+	"gitlab.enkod.tech/pkg/kafka/logger"
 	"time"
 )
 
 type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
-	syncGroup     *entity.SyncGroup
-	prePublish    []Pre
+	closed        bool
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -25,8 +24,7 @@ func newProducer(config kafka.ConfigMap) *producer {
 	config["queue.buffering.max.messages"] = int(pyraconv.ToInt64(config["queue.buffering.max.messages"]))
 	config["linger.ms"] = int(pyraconv.ToInt64(config["linger.ms"]))
 	return &producer{
-		config:    config,
-		syncGroup: entity.NewSyncGroup(),
+		config: config,
 	}
 }
 
@@ -36,14 +34,15 @@ func (p *producer) initProducer() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
 	}
+	p.closed = false
 	log.Info("KAFKA PRODUCER IS READY")
 	return nil
 }
 
 func (p *producer) stop() {
-	p.syncGroup.Close()
 	p.kafkaProducer.Flush(flushTimeout)
 	p.kafkaProducer.Close()
+	p.closed = true
 }
 
 func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
@@ -66,7 +65,7 @@ func (p *producer) produce(ctx context.Context, message *kafka.Message, delivery
 	return nil
 }
 
-func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := kafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
@@ -78,8 +77,18 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	for _, topic := range topics {
 		specification := kafka.TopicSpecification{
 			Topic:             topic.Topic,
-			ReplicationFactor: topic.GetReplicationFactor(),
-			NumPartitions:     topic.GetNumPartitions(),
+			ReplicationFactor: defaultReplicationFactor,
+			NumPartitions:     defaultNumPartitions,
+		}
+		// Если нет настроек топика, то при создании будут подставляться дефолтные
+		if topic.ReplicationFactor != 0 {
+			if topic.ReplicationFactor > maxReplicationFactor {
+				topic.ReplicationFactor = maxReplicationFactor
+			}
+			specification.ReplicationFactor = topic.ReplicationFactor
+		}
+		if topic.NumPartitions > 0 {
+			specification.NumPartitions = topic.NumPartitions
 		}
 		specifications = append(specifications, specification)
 	}
@@ -99,15 +108,11 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	return nil
 }
 
-func (p *producer) publish(ctx context.Context, message Message) (err error) {
-	if p.syncGroup.IsClosed() {
+func (p *producer) publish(ctx context.Context, message entity.Message) (err error) {
+	if p.closed {
 		return errors.New("producer was closed")
 	}
 	deliveryChannel := make(chan kafka.Event)
-	p.syncGroup.Add(1)
-	for _, pre := range p.prePublish {
-		pre(ctx, &message)
-	}
 	go p.handleDelivery(ctx, message, deliveryChannel)
 
 	err = p.produce(
@@ -121,8 +126,7 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
-	defer p.syncGroup.Done()
+func (p *producer) handleDelivery(ctx context.Context, message entity.Message, deliveryChannel chan kafka.Event) {
 	log := logger.FromContext(ctx)
 	e := <-deliveryChannel
 	close(deliveryChannel)
@@ -133,22 +137,22 @@ func (p *producer) handleDelivery(ctx context.Context, message Message, delivery
 			if kafkaErr.IsRetriable() {
 				log.WithError(kafkaErr).
 					Errorf("kafka produce retriable error, try again send topic: %v, message: %v",
-						message.Topic, message.GetBodyAsString())
+						message.Topic, string(message.Body))
 				err := p.publish(ctx, message)
 				if err != nil {
 					log.WithError(err).
 						Errorf("Cant publish by kafka, topic: %v, message: %v",
-							message.Topic, message.GetBodyAsString())
+							message.Topic, string(message.Body))
 				}
 			} else {
 				log.WithError(kafkaErr).
 					Errorf("kafka produce nonretriable error, can't send topic: %v, message: %v. Is fatal: %v",
-						message.Topic, message.GetBodyAsString(), kafkaErr.IsFatal())
+						message.Topic, string(message.Body), kafkaErr.IsFatal())
 			}
 		}
 	case kafka.Error:
 		// Общие пользовательские ошибки, клиент сам пытается переотправить, просто логируем
 		log.WithError(event).
-			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, message.GetBodyAsString())
+			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, string(message.Body))
 	}
 }

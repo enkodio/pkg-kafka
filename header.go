@@ -39,19 +39,19 @@ func (m *MessageHeader) GetValue() []byte {
 
 type Headers []Header
 
-func (h Headers) ToKafkaHeaders() []kafka.Header {
-	var headers = make([]kafka.Header, len(h))
-	for i := 0; i < len(h); i++ {
+func (h *Headers) ToKafkaHeaders() []kafka.Header {
+	var headers = make([]kafka.Header, len(*h))
+	for i, header := range *h {
 		headers[i] = kafka.Header{
-			Key:   h[i].GetKey(),
-			Value: h[i].GetValue(),
+			Key:   header.GetKey(),
+			Value: header.GetValue(),
 		}
 	}
 	return headers
 }
 
-func (h Headers) GetValueByKey(key string) []byte {
-	for _, header := range h {
+func (h *Headers) GetValueByKey(key string) []byte {
+	for _, header := range *h {
 		if header.GetKey() == key {
 			return header.GetValue()
 		}
@@ -64,4 +64,15 @@ func (h *Headers) SetHeader(key string, value []byte) {
 		Key:   key,
 		Value: value,
 	})
+}
+
+func (h *Headers) GetValidHeaders() Headers {
+	validHeaders := make([]Header, 0, len(*h))
+	for _, header := range *h {
+		if header == nil {
+			continue
+		}
+		validHeaders = append(validHeaders, header)
+	}
+	return validHeaders
 }

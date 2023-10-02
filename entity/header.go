@@ -4,6 +4,10 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
+const (
+	ServiceNameHeaderKey = "service_name"
+)
+
 type Header interface {
 	GetKey() string
 	GetValue() []byte
@@ -53,4 +57,11 @@ func (h Headers) GetValueByKey(key string) []byte {
 		}
 	}
 	return nil
+}
+
+func (h *Headers) SetHeader(key string, value []byte) {
+	*h = append(*h, &MessageHeader{
+		Key:   key,
+		Value: value,
+	})
 }

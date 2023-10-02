@@ -1,10 +1,10 @@
-package kafka
+package client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
-	"gitlab.enkod.tech/pkg/kafka/internal/entity"
-	logger2 "gitlab.enkod.tech/pkg/kafka/internal/logger"
+	"gitlab.enkod.tech/pkg/kafka/entity"
+	"gitlab.enkod.tech/pkg/kafka/logger"
 	"sync"
 	"time"
 )
@@ -59,7 +59,7 @@ func (c *consumers) createKafkaConsumers() error {
 }
 
 func (c *consumers) stopConsumers() {
-	log := logger2.GetLogger()
+	log := logger.GetLogger()
 	c.syncGroup.Close()
 
 	for i := range c.consumers {
@@ -98,12 +98,12 @@ func (c *consumers) initConsumers() {
 		}(cns, c.syncGroup)
 	}
 	c.syncGroup.Start()
-	logger2.GetLogger().Info("KAFKA CONSUMERS IS READY")
+	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")
 	return
 }
 
 func (c *consumers) reconnect() {
-	log := logger2.GetLogger()
+	log := logger.GetLogger()
 	log.Debugf("start reconnecting consumers")
 	// Стопаем консумеры
 	c.stopConsumers()
@@ -116,7 +116,7 @@ func (c *consumers) reconnect() {
 	for {
 		err := c.createKafkaConsumers()
 		if err != nil {
-			logger2.FromContext(nil).WithError(err).Error("cant init consumers")
+			logger.FromContext(nil).WithError(err).Error("cant init consumers")
 			time.Sleep(reconnectTime)
 			continue
 		}

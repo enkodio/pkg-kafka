@@ -1,10 +1,10 @@
-package kafka
+package client
 
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"gitlab.enkod.tech/pkg/kafka/internal/entity"
-	"gitlab.enkod.tech/pkg/kafka/internal/logger"
+	"gitlab.enkod.tech/pkg/kafka/entity"
+	"gitlab.enkod.tech/pkg/kafka/logger"
 	"time"
 )
 

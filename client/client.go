@@ -31,6 +31,7 @@ func NewBrokerClient(
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
 ) entity.BrokerClient {
+	logger.SetDefaultLogger("debug")
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,

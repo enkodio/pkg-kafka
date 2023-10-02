@@ -14,6 +14,7 @@ import (
 type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
+	closed        bool
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -41,6 +42,7 @@ func (p *producer) initProducer() (err error) {
 func (p *producer) stop() {
 	p.kafkaProducer.Flush(flushTimeout)
 	p.kafkaProducer.Close()
+	p.closed = true
 }
 
 func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
@@ -107,6 +109,9 @@ func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error)
 }
 
 func (p *producer) publish(ctx context.Context, message entity.Message) (err error) {
+	if p.closed {
+		return errors.New("producer was closed")
+	}
 	deliveryChannel := make(chan kafka.Event)
 	go p.handleDelivery(ctx, message, deliveryChannel)
 

@@ -33,14 +33,21 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 		return errors.Wrap(err, "cant create kafka consumer")
 	}
 	// Подписываем консумера на топик
-	err = kafkaConsumer.Subscribe(c.Topic, nil)
+	err = kafkaConsumer.Subscribe(c.Topic, getRebalanceCb())
 	if err != nil {
 		return errors.Wrap(err, "cant subscribe kafka consumer")
 	}
 	c.Consumer = kafkaConsumer
 	return nil
 }
-
+func getRebalanceCb() kafka.RebalanceCb {
+	return func(c *kafka.Consumer, event kafka.Event) error {
+		logger.GetLogger().Infof("Rebalanced: %v; rebalanced protocol: %v;",
+			event,
+			c.GetRebalanceProtocol())
+		return nil
+	}
+}
 func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
@@ -56,13 +63,10 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.Mi
 			return nil
 		default:
 			msg, err := c.ReadMessage(readTimeout)
-			if err != nil {
-				var kafkaErr kafka.Error
-				if errors.As(err, &kafkaErr) {
-					// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
-					if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
-						continue
-					}
+			if kafkaErr, ok := errToKafka(err); ok {
+				// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
+				if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
+					continue
 				}
 				return errors.Wrap(err, "cant read kafka message")
 			}

@@ -77,18 +77,8 @@ func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error)
 	for _, topic := range topics {
 		specification := kafka.TopicSpecification{
 			Topic:             topic.Topic,
-			ReplicationFactor: defaultReplicationFactor,
-			NumPartitions:     defaultNumPartitions,
-		}
-		// Если нет настроек топика, то при создании будут подставляться дефолтные
-		if topic.ReplicationFactor != 0 {
-			if topic.ReplicationFactor > maxReplicationFactor {
-				topic.ReplicationFactor = maxReplicationFactor
-			}
-			specification.ReplicationFactor = topic.ReplicationFactor
-		}
-		if topic.NumPartitions > 0 {
-			specification.NumPartitions = topic.NumPartitions
+			ReplicationFactor: topic.GetReplicationFactor(),
+			NumPartitions:     topic.GetNumPartitions(),
 		}
 		specifications = append(specifications, specification)
 	}
@@ -137,22 +127,22 @@ func (p *producer) handleDelivery(ctx context.Context, message entity.Message, d
 			if kafkaErr.IsRetriable() {
 				log.WithError(kafkaErr).
 					Errorf("kafka produce retriable error, try again send topic: %v, message: %v",
-						message.Topic, string(message.Body))
+						message.Topic, message.GetBodyAsString())
 				err := p.publish(ctx, message)
 				if err != nil {
 					log.WithError(err).
 						Errorf("Cant publish by kafka, topic: %v, message: %v",
-							message.Topic, string(message.Body))
+							message.Topic, message.GetBodyAsString())
 				}
 			} else {
 				log.WithError(kafkaErr).
 					Errorf("kafka produce nonretriable error, can't send topic: %v, message: %v. Is fatal: %v",
-						message.Topic, string(message.Body), kafkaErr.IsFatal())
+						message.Topic, message.GetBodyAsString(), kafkaErr.IsFatal())
 			}
 		}
 	case kafka.Error:
 		// Общие пользовательские ошибки, клиент сам пытается переотправить, просто логируем
 		log.WithError(event).
-			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, string(message.Body))
+			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, message.GetBodyAsString())
 	}
 }

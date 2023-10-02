@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
-	entity "gitlab.enkod.tech/pkg/kafka/entity"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/kafka"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
+	"gitlab.enkod.tech/pkg/kafka/entity"
 	"gitlab.enkod.tech/pkg/kafka/logger"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 )
@@ -34,7 +34,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 func getTestMiddleware() entity.MiddlewareFunc {
 	return func(next entity.MessageHandler) entity.MessageHandler {
-		return func(ctx context.Context, message entity.Message) error {
+		return func(ctx context.Context, message entity.CustomMessage) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
@@ -42,7 +42,7 @@ func getTestMiddleware() entity.MiddlewareFunc {
 }
 
 func testConsumer(topic string, k entity.BrokerClient) {
-	k.Subscribe(testHandler, 1, entity.TopicSpecifications{
+	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,
@@ -50,7 +50,7 @@ func testConsumer(topic string, k entity.BrokerClient) {
 }
 
 func testProducer(topic string, k entity.BrokerClient) {
-	err := k.Publish(context.Background(), entity.Message{
+	err := k.Publish(context.Background(), &entity.Message{
 		Topic: topic,
 		Body:  []byte("test"),
 	})

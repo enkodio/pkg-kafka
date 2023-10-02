@@ -9,14 +9,6 @@ import (
 )
 
 const (
-	// Максимальное количество реплик каждой партиции (равно количеству брокеров в кластере)
-	maxReplicationFactor = 3
-
-	// Значение реплик каждой партиции по умолчанию
-	defaultReplicationFactor = 1
-	// Значение партиций для топика по умолчанию
-	defaultNumPartitions = 3
-
 	// Время ожидания, пока очередь в буфере продусера переполнена
 	queueFullWaitTime = time.Second * 5
 
@@ -85,16 +77,18 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, message entity.Message) (err error) {
+func (c *client) Publish(ctx context.Context, customMessage entity.CustomMessage) (err error) {
+	message := entity.NewMessage(customMessage)
 	message.Topic = c.topicPrefix + message.Topic
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h entity.Handler, countConsumers int, spec entity.TopicSpecifications) {
+func (c *client) Subscribe(h entity.Handler, countConsumers int, specification entity.Specifications) {
 	log := logger.GetLogger()
-	spec.Topic = c.topicPrefix + spec.Topic
+	topicSpecification := entity.NewTopicSpecifications(specification)
+	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
-		err := c.consumers.addNewConsumer(h, spec)
+		err := c.consumers.addNewConsumer(h, topicSpecification)
 		if err != nil {
 			log.Fatal(err, "can't create new consumer")
 		}

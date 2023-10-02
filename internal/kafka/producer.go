@@ -123,8 +123,7 @@ func (p *producer) handleDelivery(ctx context.Context, message entity.Message, d
 	close(deliveryChannel)
 	switch event := e.(type) {
 	case *kafka.Message:
-		if event.TopicPartition.Error != nil {
-			kafkaErr := event.TopicPartition.Error.(kafka.Error)
+		if kafkaErr, ok := errToKafka(event.TopicPartition.Error); ok {
 			// Если retriable, то ошибка временная, нужно пытаться переотправить снова, если нет, то ошибка nonretriable, просто логируем
 			if kafkaErr.IsRetriable() {
 				log.WithError(kafkaErr).

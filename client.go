@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -26,12 +27,17 @@ type client struct {
 	producer    *producer
 }
 
-func NewBrokerClient(
+func NewClient(
 	producerConfig kafka.ConfigMap,
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
+	log ...*logrus.Logger,
 ) Client {
-	SetDefaultLogger("debug")
+	if len(log) > 0 {
+		SetLogger(log[0])
+	} else {
+		SetDefaultLogger("debug")
+	}
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,
@@ -78,7 +84,7 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers []Header) (err error) {
+func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...Header) (err error) {
 	dataB, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "cant marshal data")

@@ -15,7 +15,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 	//broker clients
 	var (
-		k = kafka.NewBrokerClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
+		k = kafka.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
 	)
 
 	testConsumer(testTopic, k)

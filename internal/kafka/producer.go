@@ -18,6 +18,11 @@ type producer struct {
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
+	config["client.id"] = uuid.New().String()
+
+	// FIXME Два костыля, нужно подумать, что делать с тем, что с консула числа маршлятся во float64
+	config["queue.buffering.max.messages"] = int(pyraconv.ToInt64(config["queue.buffering.max.messages"]))
+	config["linger.ms"] = int(pyraconv.ToInt64(config["linger.ms"]))
 	return &producer{
 		config: config,
 	}
@@ -25,16 +30,11 @@ func newProducer(config kafka.ConfigMap) *producer {
 
 func (p *producer) initProducer() (err error) {
 	log := logger.GetLogger()
-	p.config["client.id"] = uuid.New().String()
-
-	// FIXME Два костыля, нужно подумать, что делать с тем, что с консула числа маршлятся во float64
-	p.config["queue.buffering.max.messages"] = int(pyraconv.ToInt64(p.config["queue.buffering.max.messages"]))
-	p.config["linger.ms"] = int(pyraconv.ToInt64(p.config["linger.ms"]))
-
 	p.kafkaProducer, err = kafka.NewProducer(&p.config)
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
 	}
+	p.closed = false
 	log.Info("KAFKA PRODUCER IS READY")
 	return nil
 }

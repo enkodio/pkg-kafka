@@ -97,7 +97,7 @@ func (c *consumers) initConsumers() {
 			}
 		}(cns, c.syncGroup)
 	}
-
+	c.syncGroup.Start()
 	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")
 	return
 }
@@ -124,6 +124,5 @@ func (c *consumers) reconnect() {
 		break
 	}
 
-	c.syncGroup.Start()
 	c.initConsumers()
 }

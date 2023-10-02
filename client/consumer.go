@@ -1,23 +1,23 @@
-package client
+package kafka
 
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"kafka_client/internal/entity"
+	"kafka_client/pkg/logger"
 )
 
 type consumer struct {
-	handler Handler
-	TopicSpecifications
+	handler entity.Handler
+	entity.TopicSpecifications
 	*kafka.Consumer
 }
 
 func newConsumer(
-	topicSpecifications TopicSpecifications,
-	handler Handler,
+	topicSpecifications entity.TopicSpecifications,
+	handler entity.Handler,
 ) *consumer {
 	return &consumer{
 		TopicSpecifications: topicSpecifications,
@@ -33,7 +33,7 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 		return errors.Wrap(err, "cant create kafka consumer")
 	}
 	// Подписываем консумера на топик
-	err = kafkaConsumer.Subscribe(c.Topic, c.getRebalanceCb())
+	err = kafkaConsumer.Subscribe(c.Topic, nil)
 	if err != nil {
 		return errors.Wrap(err, "cant subscribe kafka consumer")
 	}
@@ -41,20 +41,11 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 	return nil
 }
 
-func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
-	return func(c *kafka.Consumer, event kafka.Event) error {
-		logger.GetLogger().Debugf("Rebalanced: %v; rebalanced protocol: %v;",
-			event.String(),
-			c.GetRebalanceProtocol())
-		return nil
-	}
-}
-
-func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []MiddlewareFunc) error {
+func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler MessageHandler = func(ctx context.Context, message Message) error {
-		return c.handler(ctx, message.GetBody())
+	var handler entity.MessageHandler = func(ctx context.Context, message entity.Message) error {
+		return c.handler(ctx, message.Body)
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {
 		handler = mwFuncs[j](handler)
@@ -65,14 +56,17 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []Middlewar
 			return nil
 		default:
 			msg, err := c.ReadMessage(readTimeout)
-			if kafkaErr, ok := errToKafka(err); ok {
-				// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
-				if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
-					continue
+			if err != nil {
+				var kafkaErr kafka.Error
+				if errors.As(err, &kafkaErr) {
+					// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
+					if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
+						continue
+					}
 				}
 				return errors.Wrap(err, "cant read kafka message")
 			}
-			err = handler(context.Background(), NewByKafkaMessage(msg))
+			err = handler(context.Background(), entity.NewByKafkaMessage(msg))
 			if err != nil && c.CheckError {
 				log.WithError(err).Debug("try to read message again")
 				c.rollbackConsumerTransaction(msg.TopicPartition)

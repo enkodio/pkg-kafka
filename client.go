@@ -106,6 +106,6 @@ func (c *client) Subscribe(h Handler, countConsumers int, specification Specific
 		}
 	}
 }
-func (c *client) PrePublish(f func(ctx context.Context, message *Message)) {
+func (c *client) PrePublish(f Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

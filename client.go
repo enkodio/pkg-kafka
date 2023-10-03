@@ -91,7 +91,7 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}, he
 	}
 	message := NewMessage(topic, dataB, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.SetHeader(ServiceNameHeaderKey, []byte(c.serviceName))
+	message.Headers.setServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)
 }
 

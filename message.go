@@ -59,6 +59,6 @@ func (m *Message) ToKafkaMessage() *kafka.Message {
 			Topic:     &m.Topic,
 			Partition: kafka.PartitionAny},
 		Value:   m.Body,
-		Headers: m.Headers.ToKafkaHeaders(),
+		Headers: m.Headers.toKafkaHeaders(),
 	}
 }

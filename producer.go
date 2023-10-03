@@ -13,7 +13,7 @@ type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
 	syncGroup     *SyncGroup
-	prePublish    []func(ctx context.Context, message *Message)
+	prePublish    []Pre
 }
 
 func newProducer(config kafka.ConfigMap) *producer {

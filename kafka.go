@@ -10,6 +10,7 @@ type (
 )
 
 type Handler func(ctx context.Context, message []byte) error
+type Pre func(ctx context.Context, message *Message)
 
 type Client interface {
 	Start() error
@@ -18,4 +19,5 @@ type Client interface {
 	StopProduce()
 	Publish(context.Context, string, interface{}, ...Header) error
 	Subscribe(Handler, int, Specifications)
+	PrePublish(Pre)
 }

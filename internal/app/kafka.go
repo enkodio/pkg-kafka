@@ -7,15 +7,13 @@ import (
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
-	kafka.SetDefaultLogger("debug")
-
 	const (
 		testTopic = "test_topic"
 	)
 
 	//broker clients
 	var (
-		k = kafka.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName)
+		k = kafka.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
 	)
 
 	testConsumer(testTopic, k)

@@ -31,10 +31,11 @@ func NewClient(
 	producerConfig kafka.ConfigMap,
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
-	log ...*logrus.Logger,
+	log *logrus.Logger,
+	prefix string,
 ) Client {
-	if len(log) > 0 {
-		SetLogger(log[0])
+	if log != nil {
+		SetLogger(log)
 	} else {
 		SetDefaultLogger("debug")
 	}
@@ -43,6 +44,7 @@ func NewClient(
 		serviceName: serviceName,
 		producer:    newProducer(producerConfig),
 		consumers:   newConsumers(consumerConfig),
+		topicPrefix: prefix,
 	}
 }
 

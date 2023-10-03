@@ -13,6 +13,7 @@ type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
 	syncGroup     *SyncGroup
+	prePublish    []func(ctx context.Context, message *Message)
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -102,6 +103,9 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	}
 	deliveryChannel := make(chan kafka.Event)
 	p.syncGroup.Add(1)
+	for _, pre := range p.prePublish {
+		pre(ctx, &message)
+	}
 	go p.handleDelivery(ctx, message, deliveryChannel)
 
 	err = p.produce(

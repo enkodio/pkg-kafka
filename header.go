@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	ServiceNameHeaderKey = "service_name"
+	serviceNameHeaderKey = "service_name"
 )
 
 type Header interface {
@@ -39,7 +39,7 @@ func (m MessageHeader) GetValue() []byte {
 
 type Headers []Header
 
-func (h Headers) ToKafkaHeaders() []kafka.Header {
+func (h Headers) toKafkaHeaders() []kafka.Header {
 	var headers = make([]kafka.Header, len(h))
 	for i, header := range h {
 		headers[i] = kafka.Header{
@@ -48,6 +48,10 @@ func (h Headers) ToKafkaHeaders() []kafka.Header {
 		}
 	}
 	return headers
+}
+
+func (h *Headers) setServiceName(serviceName string) {
+	h.SetHeader(serviceNameHeaderKey, []byte(serviceName))
 }
 
 func (h Headers) GetValueByKey(key string) []byte {
@@ -75,4 +79,8 @@ func (h Headers) GetValidHeaders() Headers {
 		validHeaders = append(validHeaders, header)
 	}
 	return validHeaders
+}
+
+func (h Headers) GetServiceName() string {
+	return string(h.GetValueByKey(serviceNameHeaderKey))
 }

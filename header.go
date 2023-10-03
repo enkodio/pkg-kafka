@@ -29,19 +29,19 @@ func NewByKafkaHeaders(kafkaHeaders []kafka.Header) Headers {
 	return headers
 }
 
-func (m *MessageHeader) GetKey() string {
+func (m MessageHeader) GetKey() string {
 	return m.Key
 }
 
-func (m *MessageHeader) GetValue() []byte {
+func (m MessageHeader) GetValue() []byte {
 	return m.Value
 }
 
 type Headers []Header
 
-func (h *Headers) ToKafkaHeaders() []kafka.Header {
-	var headers = make([]kafka.Header, len(*h))
-	for i, header := range *h {
+func (h Headers) ToKafkaHeaders() []kafka.Header {
+	var headers = make([]kafka.Header, len(h))
+	for i, header := range h {
 		headers[i] = kafka.Header{
 			Key:   header.GetKey(),
 			Value: header.GetValue(),
@@ -50,8 +50,8 @@ func (h *Headers) ToKafkaHeaders() []kafka.Header {
 	return headers
 }
 
-func (h *Headers) GetValueByKey(key string) []byte {
-	for _, header := range *h {
+func (h Headers) GetValueByKey(key string) []byte {
+	for _, header := range h {
 		if header.GetKey() == key {
 			return header.GetValue()
 		}
@@ -66,9 +66,9 @@ func (h *Headers) SetHeader(key string, value []byte) {
 	})
 }
 
-func (h *Headers) GetValidHeaders() Headers {
-	validHeaders := make([]Header, 0, len(*h))
-	for _, header := range *h {
+func (h Headers) GetValidHeaders() Headers {
+	validHeaders := make([]Header, 0, len(h))
+	for _, header := range h {
 		if header == nil {
 			continue
 		}

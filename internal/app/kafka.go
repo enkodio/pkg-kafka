@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	kafka "gitlab.enkod.tech/pkg/kafka"
+	"gitlab.enkod.tech/pkg/kafka/client"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 )
 

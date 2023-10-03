@@ -1,4 +1,4 @@
-package kafka_client
+package kafka
 
 const (
 	// Значение реплик каждой партиции по умолчанию

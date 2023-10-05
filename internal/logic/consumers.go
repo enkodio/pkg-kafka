@@ -3,6 +3,7 @@ package logic
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"sync"
@@ -12,7 +13,7 @@ import (
 type consumers struct {
 	config    kafka.ConfigMap
 	consumers []*consumer
-	mwFuncs   []entity.MiddlewareFunc
+	mwFuncs   []kafkaClient.MiddlewareFunc
 	syncGroup *entity.SyncGroup
 }
 
@@ -38,7 +39,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecificati
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler entity.Handler, topicSpecification entity.TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler kafkaClient.Handler, topicSpecification entity.TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {

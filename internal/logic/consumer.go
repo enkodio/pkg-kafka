@@ -5,19 +5,20 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
 
 type consumer struct {
-	handler entity.Handler
+	handler kafkaClient.Handler
 	entity.TopicSpecifications
 	*kafka.Consumer
 }
 
 func newConsumer(
 	topicSpecifications entity.TopicSpecifications,
-	handler entity.Handler,
+	handler kafkaClient.Handler,
 ) *consumer {
 	return &consumer{
 		TopicSpecifications: topicSpecifications,
@@ -50,10 +51,10 @@ func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 	}
 }
 
-func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []entity.MiddlewareFunc) error {
+func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafkaClient.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler entity.MessageHandler = func(ctx context.Context, message entity.CustomMessage) error {
+	var handler kafkaClient.MessageHandler = func(ctx context.Context, message entity.CustomMessage) error {
 		return c.handler(ctx, message.GetBody())
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {

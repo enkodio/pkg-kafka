@@ -1,8 +1,10 @@
-package kafka
+package logic
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"sync"
 	"time"
 )
@@ -10,21 +12,21 @@ import (
 type consumers struct {
 	config    kafka.ConfigMap
 	consumers []*consumer
-	mwFuncs   []MiddlewareFunc
-	syncGroup *SyncGroup
+	mwFuncs   []entity.MiddlewareFunc
+	syncGroup *entity.SyncGroup
 }
 
 func newConsumers(config kafka.ConfigMap) consumers {
 	return consumers{
 		config:    config,
 		consumers: make([]*consumer, 0),
-		syncGroup: NewSyncGroup(),
+		syncGroup: entity.NewSyncGroup(),
 	}
 }
 
-func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
+func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecifications {
 	topicsMap := make(map[string]struct{}, len(c.consumers))
-	topics := make([]TopicSpecifications, 0, len(c.consumers))
+	topics := make([]entity.TopicSpecifications, 0, len(c.consumers))
 
 	for _, consumer := range c.consumers {
 		if _, ok := topicsMap[consumer.Topic]; ok {
@@ -36,7 +38,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler Handler, topicSpecification TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler entity.Handler, topicSpecification entity.TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {
@@ -57,7 +59,7 @@ func (c *consumers) createKafkaConsumers() error {
 }
 
 func (c *consumers) stopConsumers() {
-	log := GetLogger()
+	log := logger.GetLogger()
 	c.syncGroup.Close()
 
 	for i := range c.consumers {
@@ -85,7 +87,7 @@ func (c *consumers) initConsumers() {
 	// Запускаем каждого консумера в отдельной горутине
 	for _, cns := range c.consumers {
 		c.syncGroup.Add(1)
-		go func(consumer *consumer, syncGroup *SyncGroup) {
+		go func(consumer *consumer, syncGroup *entity.SyncGroup) {
 			err := consumer.startConsume(syncGroup, c.mwFuncs)
 			c.syncGroup.Done()
 			if err != nil {
@@ -96,12 +98,12 @@ func (c *consumers) initConsumers() {
 		}(cns, c.syncGroup)
 	}
 	c.syncGroup.Start()
-	GetLogger().Info("KAFKA CONSUMERS IS READY")
+	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")
 	return
 }
 
 func (c *consumers) reconnect() {
-	log := GetLogger()
+	log := logger.GetLogger()
 	log.Debugf("start reconnecting consumers")
 	// Стопаем консумеры
 	c.stopConsumers()
@@ -114,7 +116,7 @@ func (c *consumers) reconnect() {
 	for {
 		err := c.createKafkaConsumers()
 		if err != nil {
-			FromContext(nil).WithError(err).Error("cant init consumers")
+			logger.FromContext(nil).WithError(err).Error("cant init consumers")
 			time.Sleep(reconnectTime)
 			continue
 		}

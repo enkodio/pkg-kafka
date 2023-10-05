@@ -1,4 +1,4 @@
-package kafka
+package logic
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
 )
 
@@ -33,11 +35,11 @@ func NewClient(
 	serviceName string,
 	log *logrus.Logger,
 	prefix string,
-) Client {
+) entity.Client {
 	if log != nil {
-		SetLogger(log)
+		logger.SetLogger(log)
 	} else {
-		SetDefaultLogger("debug")
+		logger.SetDefaultLogger("debug")
 	}
 	consumerConfig["group.id"] = serviceName
 	return &client{
@@ -45,15 +47,6 @@ func NewClient(
 		producer:    newProducer(producerConfig),
 		consumers:   newConsumers(consumerConfig),
 		topicPrefix: prefix,
-	}
-}
-
-func Start(client Client) {
-	log := GetLogger()
-	log.Info("START CONNECTING TO KAFKA")
-	err := client.Start()
-	if err != nil {
-		log.Fatal(err, "can't start kafka client")
 	}
 }
 
@@ -72,7 +65,7 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...MiddlewareFunc) {
+func (c *client) Pre(mw ...entity.MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
@@ -86,20 +79,20 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...Header) (err error) {
+func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...entity.Header) (err error) {
 	dataB, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "cant marshal data")
 	}
-	message := NewMessage(topic, dataB, headers, "")
+	message := entity.NewMessage(topic, dataB, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.setServiceName(c.serviceName)
+	message.Headers.SetServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h Handler, countConsumers int, specification Specifications) {
-	log := GetLogger()
-	topicSpecification := NewTopicSpecifications(specification)
+func (c *client) Subscribe(h entity.Handler, countConsumers int, specification entity.Specifications) {
+	log := logger.GetLogger()
+	topicSpecification := entity.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)
@@ -108,6 +101,6 @@ func (c *client) Subscribe(h Handler, countConsumers int, specification Specific
 		}
 	}
 }
-func (c *client) PrePublish(f Pre) {
+func (c *client) PrePublish(f entity.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

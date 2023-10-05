@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
-	"gitlab.enkod.tech/pkg/kafka/client"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/internal/logic"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
+	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
@@ -13,14 +15,14 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 	//broker clients
 	var (
-		k = kafka.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
+		k = logic.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
 	)
 
 	testConsumer(testTopic, k)
 	k.Pre(
 		getTestMiddleware(),
 	)
-	kafka.Start(k)
+	logic.Start(k)
 	testProducer(testTopic, k)
 	testProducer(testTopic, k)
 	k.StopProduce()
@@ -28,33 +30,33 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	select {}
 }
 
-func getTestMiddleware() kafka.MiddlewareFunc {
-	return func(next kafka.MessageHandler) kafka.MessageHandler {
-		return func(ctx context.Context, message kafka.CustomMessage) error {
-			kafka.GetLogger().Info("got middleware")
+func getTestMiddleware() entity.MiddlewareFunc {
+	return func(next entity.MessageHandler) entity.MessageHandler {
+		return func(ctx context.Context, message entity.CustomMessage) error {
+			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
 	}
 }
 
-func testConsumer(topic string, k kafka.Client) {
-	k.Subscribe(testHandler, 1, &kafka.TopicSpecifications{
+func testConsumer(topic string, k entity.Client) {
+	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,
 	})
 }
 
-func testProducer(topic string, k kafka.Client) {
+func testProducer(topic string, k entity.Client) {
 	err := k.Publish(context.Background(), topic, nil,
 		nil,
 	)
 	if err != nil {
-		kafka.GetLogger().WithError(err).Error("produce err")
+		logger.GetLogger().WithError(err).Error("produce err")
 	}
 }
 
 func testHandler(ctx context.Context, msg []byte) error {
-	kafka.GetLogger().Info(string(msg))
+	logger.GetLogger().Info(string(msg))
 	return nil
 }

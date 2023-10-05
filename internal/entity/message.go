@@ -1,6 +1,8 @@
-package kafka
+package entity
 
-import "github.com/confluentinc/confluent-kafka-go/kafka"
+import (
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+)
 
 type CustomMessage interface {
 	GetKey() string

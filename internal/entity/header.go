@@ -1,4 +1,4 @@
-package kafka
+package entity
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -50,7 +50,7 @@ func (h Headers) toKafkaHeaders() []kafka.Header {
 	return headers
 }
 
-func (h *Headers) setServiceName(serviceName string) {
+func (h *Headers) SetServiceName(serviceName string) {
 	h.SetHeader(serviceNameHeaderKey, []byte(serviceName))
 }
 

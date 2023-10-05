@@ -1,4 +1,4 @@
-package kafka
+package entity
 
 const (
 	// Значение реплик каждой партиции по умолчанию

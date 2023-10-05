@@ -1,4 +1,4 @@
-package kafka
+package entity
 
 import (
 	"sync"
@@ -37,6 +37,10 @@ func (s *SyncGroup) Close() {
 	}
 	s.wg.Wait()
 	return
+}
+
+func (s *SyncGroup) IsClosed() bool {
+	return s.closed
 }
 
 func (s *SyncGroup) IsDone() <-chan struct{} {

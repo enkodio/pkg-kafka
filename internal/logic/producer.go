@@ -1,4 +1,4 @@
-package kafka
+package logic
 
 import (
 	"context"
@@ -6,14 +6,16 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
 )
 
 type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
-	syncGroup     *SyncGroup
-	prePublish    []Pre
+	syncGroup     *entity.SyncGroup
+	prePublish    []entity.Pre
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -24,12 +26,12 @@ func newProducer(config kafka.ConfigMap) *producer {
 	config["linger.ms"] = int(pyraconv.ToInt64(config["linger.ms"]))
 	return &producer{
 		config:    config,
-		syncGroup: NewSyncGroup(),
+		syncGroup: entity.NewSyncGroup(),
 	}
 }
 
 func (p *producer) initProducer() (err error) {
-	log := GetLogger()
+	log := logger.GetLogger()
 	p.kafkaProducer, err = kafka.NewProducer(&p.config)
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
@@ -45,7 +47,7 @@ func (p *producer) stop() {
 }
 
 func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
-	log := FromContext(ctx)
+	log := logger.FromContext(ctx)
 	for {
 		err := p.kafkaProducer.Produce(message, deliveryChannel)
 		if err != nil {
@@ -64,14 +66,14 @@ func (p *producer) produce(ctx context.Context, message *kafka.Message, delivery
 	return nil
 }
 
-func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := kafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
 		return errors.Wrap(err, "cant init kafka admin client")
 	}
 	defer adminClient.Close()
-	log := GetLogger()
+	log := logger.GetLogger()
 	specifications := make([]kafka.TopicSpecification, 0, len(topics))
 	for _, topic := range topics {
 		specification := kafka.TopicSpecification{
@@ -97,8 +99,8 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	return nil
 }
 
-func (p *producer) publish(ctx context.Context, message Message) (err error) {
-	if p.syncGroup.closed {
+func (p *producer) publish(ctx context.Context, message entity.Message) (err error) {
+	if p.syncGroup.IsClosed() {
 		return errors.New("producer was closed")
 	}
 	deliveryChannel := make(chan kafka.Event)
@@ -119,9 +121,9 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
+func (p *producer) handleDelivery(ctx context.Context, message entity.Message, deliveryChannel chan kafka.Event) {
 	defer p.syncGroup.Done()
-	log := FromContext(ctx)
+	log := logger.FromContext(ctx)
 	e := <-deliveryChannel
 	close(deliveryChannel)
 	switch event := e.(type) {

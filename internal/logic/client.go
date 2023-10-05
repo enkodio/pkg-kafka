@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
@@ -33,14 +32,8 @@ func NewClient(
 	producerConfig kafka.ConfigMap,
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
-	log *logrus.Logger,
 	prefix string,
 ) entity.Client {
-	if log != nil {
-		logger.SetLogger(log)
-	} else {
-		logger.SetDefaultLogger("debug")
-	}
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,

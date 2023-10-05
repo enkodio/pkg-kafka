@@ -15,7 +15,13 @@ func NewClient(
 	log *logrus.Logger,
 	prefix string,
 ) entity.Client {
-	return logic.NewClient(producerConfig, consumerConfig, serviceName, log, prefix)
+	if log != nil {
+		logger.SetLogger(log)
+	} else {
+		logger.SetDefaultLogger("debug")
+	}
+
+	return logic.NewClient(producerConfig, consumerConfig, serviceName, prefix)
 }
 
 func Start(client entity.Client) {

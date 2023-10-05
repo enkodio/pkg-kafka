@@ -4,7 +4,6 @@ import (
 	"context"
 	"gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
-	"gitlab.enkod.tech/pkg/kafka/internal/logic"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
@@ -16,7 +15,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 	//broker clients
 	var (
-		k = logic.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
+		k = kafka.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
 	)
 
 	testConsumer(testTopic, k)

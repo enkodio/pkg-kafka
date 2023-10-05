@@ -3,7 +3,6 @@ package kafka
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/sirupsen/logrus"
-	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/internal/logic"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
@@ -14,7 +13,7 @@ func NewClient(
 	serviceName string,
 	log *logrus.Logger,
 	prefix string,
-) entity.Client {
+) Client {
 	if log != nil {
 		logger.SetLogger(log)
 	} else {
@@ -24,7 +23,7 @@ func NewClient(
 	return logic.NewClient(producerConfig, consumerConfig, serviceName, prefix)
 }
 
-func Start(client entity.Client) {
+func Start(client Client) {
 	log := logger.GetLogger()
 	log.Info("START CONNECTING TO KAFKA")
 	err := client.Start()

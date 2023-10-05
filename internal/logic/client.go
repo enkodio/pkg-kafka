@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
@@ -33,7 +34,7 @@ func NewClient(
 	consumerConfig kafka.ConfigMap,
 	serviceName string,
 	prefix string,
-) entity.Client {
+) kafkaClient.Client {
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,
@@ -58,7 +59,7 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...entity.MiddlewareFunc) {
+func (c *client) Pre(mw ...kafkaClient.MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
@@ -83,7 +84,7 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}, he
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h entity.Handler, countConsumers int, specification entity.Specifications) {
+func (c *client) Subscribe(h kafkaClient.Handler, countConsumers int, specification entity.Specifications) {
 	log := logger.GetLogger()
 	topicSpecification := entity.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
@@ -94,6 +95,6 @@ func (c *client) Subscribe(h entity.Handler, countConsumers int, specification e
 		}
 	}
 }
-func (c *client) PrePublish(f entity.Pre) {
+func (c *client) PrePublish(f kafkaClient.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

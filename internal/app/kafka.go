@@ -30,8 +30,8 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	select {}
 }
 
-func getTestMiddleware() entity.MiddlewareFunc {
-	return func(next entity.MessageHandler) entity.MessageHandler {
+func getTestMiddleware() kafka.MiddlewareFunc {
+	return func(next kafka.MessageHandler) kafka.MessageHandler {
 		return func(ctx context.Context, message entity.CustomMessage) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
@@ -39,7 +39,7 @@ func getTestMiddleware() entity.MiddlewareFunc {
 	}
 }
 
-func testConsumer(topic string, k entity.Client) {
+func testConsumer(topic string, k kafka.Client) {
 	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
@@ -47,7 +47,7 @@ func testConsumer(topic string, k entity.Client) {
 	})
 }
 
-func testProducer(topic string, k entity.Client) {
+func testProducer(topic string, k kafka.Client) {
 	err := k.Publish(context.Background(), topic, nil,
 		nil,
 	)

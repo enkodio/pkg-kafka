@@ -6,6 +6,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
@@ -15,7 +16,7 @@ type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
 	syncGroup     *entity.SyncGroup
-	prePublish    []entity.Pre
+	prePublish    []kafkaClient.Pre
 }
 
 func newProducer(config kafka.ConfigMap) *producer {

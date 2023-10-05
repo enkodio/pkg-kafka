@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"gitlab.enkod.tech/pkg/kafka"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/internal/logic"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
@@ -22,7 +23,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	k.Pre(
 		getTestMiddleware(),
 	)
-	logic.Start(k)
+	kafka.Start(k)
 	testProducer(testTopic, k)
 	testProducer(testTopic, k)
 	k.StopProduce()

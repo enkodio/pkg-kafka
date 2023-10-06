@@ -18,11 +18,11 @@ type Message struct {
 	Topic   string  `json:"topic"`
 }
 
-func NewMessage(topic string, body []byte, headers Headers, key string) Message {
+func NewMessage(topic string, body []byte, key string) Message {
 	return Message{
 		Topic:   topic,
 		Body:    body,
-		Headers: headers.GetValidHeaders(),
+		Headers: make([]Header, 0),
 		Key:     key,
 	}
 }

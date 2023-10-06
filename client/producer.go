@@ -1,4 +1,4 @@
-package logic
+package client
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
@@ -16,7 +15,7 @@ type producer struct {
 	config        kafka.ConfigMap
 	kafkaProducer *kafka.Producer
 	syncGroup     *entity.SyncGroup
-	prePublish    []kafkaClient.Pre
+	prePublish    []Pre
 }
 
 func newProducer(config kafka.ConfigMap) *producer {
@@ -67,7 +66,7 @@ func (p *producer) produce(ctx context.Context, message *kafka.Message, delivery
 	return nil
 }
 
-func (p *producer) createTopics(topics []kafkaClient.TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := kafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
@@ -100,7 +99,7 @@ func (p *producer) createTopics(topics []kafkaClient.TopicSpecifications) (err e
 	return nil
 }
 
-func (p *producer) publish(ctx context.Context, message kafkaClient.Message) (err error) {
+func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	if p.syncGroup.IsClosed() {
 		return errors.New("producer was closed")
 	}
@@ -122,7 +121,7 @@ func (p *producer) publish(ctx context.Context, message kafkaClient.Message) (er
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message kafkaClient.Message, deliveryChannel chan kafka.Event) {
+func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
 	defer p.syncGroup.Done()
 	log := logger.FromContext(ctx)
 	e := <-deliveryChannel

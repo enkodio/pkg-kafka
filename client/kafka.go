@@ -3,7 +3,6 @@ package client
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/sirupsen/logrus"
-	"gitlab.enkod.tech/pkg/kafka/internal/logic"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
 
@@ -20,7 +19,7 @@ func NewClient(
 		logger.SetDefaultLogger("debug")
 	}
 
-	return logic.NewClient(producerConfig, consumerConfig, serviceName, prefix)
+	return newClient(producerConfig, consumerConfig, serviceName, prefix)
 }
 
 func Start(client Client) {

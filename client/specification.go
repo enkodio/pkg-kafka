@@ -1,4 +1,4 @@
-package entity
+package client
 
 const (
 	// Значение реплик каждой партиции по умолчанию

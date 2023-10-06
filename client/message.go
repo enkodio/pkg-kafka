@@ -1,4 +1,4 @@
-package entity
+package client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"

@@ -43,7 +43,7 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 
 func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 	return func(c *kafka.Consumer, event kafka.Event) error {
-		logger.GetLogger().Infof("Rebalanced: %v; rebalanced protocol: %v;",
+		logger.GetLogger().Debugf("Rebalanced: %v; rebalanced protocol: %v;",
 			event.String(),
 			c.GetRebalanceProtocol())
 		return nil

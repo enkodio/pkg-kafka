@@ -72,15 +72,21 @@ func (c *client) StopProduce() {
 }
 
 func (c *client) Publish(ctx context.Context, topic string, data interface{}) (err error) {
-	dataB, err := json.Marshal(data)
-	if err != nil {
-		return errors.Wrap(err, "cant marshal data")
+	var dataB []byte
+
+	if dataS, ok := data.(string); ok {
+		dataB = []byte(dataS)
+	} else {
+		dataB, err = json.Marshal(data)
+		if err != nil {
+			return errors.Wrap(err, "cant marshal data")
+		}
 	}
-	return c.PublishByte(ctx, topic, dataB)
+	return c.publishByte(ctx, topic, dataB)
 }
 
-func (c *client) PublishByte(ctx context.Context, topic string, data []byte, headers ...Header) (err error) {
-	message := NewMessage(topic, data, headers, "")
+func (c *client) publishByte(ctx context.Context, topic string, data []byte) (err error) {
+	message := NewMessage(topic, data, "")
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)

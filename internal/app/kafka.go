@@ -2,8 +2,7 @@ package app
 
 import (
 	"context"
-	"gitlab.enkod.tech/pkg/kafka"
-	kafka2 "gitlab.enkod.tech/pkg/kafka/kafka"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
 	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
@@ -15,14 +14,14 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 	//broker clients
 	var (
-		k = kafka2.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
+		k = kafkaClient.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
 	)
 
 	testConsumer(testTopic, k)
 	k.Pre(
 		getTestMiddleware(),
 	)
-	kafka2.Start(k)
+	kafkaClient.Start(k)
 	testProducer(testTopic, k)
 	testProducer(testTopic, k)
 	k.StopProduce()
@@ -30,24 +29,24 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	select {}
 }
 
-func getTestMiddleware() kafka_client.MiddlewareFunc {
-	return func(next kafka_client.MessageHandler) kafka_client.MessageHandler {
-		return func(ctx context.Context, message kafka2.CustomMessage) error {
+func getTestMiddleware() kafkaClient.MiddlewareFunc {
+	return func(next kafkaClient.MessageHandler) kafkaClient.MessageHandler {
+		return func(ctx context.Context, message kafkaClient.CustomMessage) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
 	}
 }
 
-func testConsumer(topic string, k kafka_client.Client) {
-	k.Subscribe(testHandler, 1, &kafka2.TopicSpecifications{
+func testConsumer(topic string, k kafkaClient.Client) {
+	k.Subscribe(testHandler, 1, &kafkaClient.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,
 	})
 }
 
-func testProducer(topic string, k kafka_client.Client) {
+func testProducer(topic string, k kafkaClient.Client) {
 	err := k.Publish(context.Background(), topic, nil,
 		nil,
 	)

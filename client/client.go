@@ -71,12 +71,12 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...Header) (err error) {
+func (c *client) Publish(ctx context.Context, topic string, data interface{}) (err error) {
 	dataB, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "cant marshal data")
 	}
-	return c.PublishByte(ctx, topic, dataB, headers...)
+	return c.PublishByte(ctx, topic, dataB)
 }
 
 func (c *client) PublishByte(ctx context.Context, topic string, data []byte, headers ...Header) (err error) {

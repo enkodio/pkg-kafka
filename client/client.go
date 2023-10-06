@@ -18,6 +18,7 @@ type Client interface {
 	StopSubscribe()
 	StopProduce()
 	Publish(context.Context, string, interface{}, ...Header) error
+	PublishByte(context.Context, string, []byte, ...Header) (err error)
 	Subscribe(Handler, int, Specifications)
 	PrePublish(Pre)
 }

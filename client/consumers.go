@@ -1,9 +1,8 @@
-package logic
+package client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"sync"
@@ -13,7 +12,7 @@ import (
 type consumers struct {
 	config    kafka.ConfigMap
 	consumers []*consumer
-	mwFuncs   []kafkaClient.MiddlewareFunc
+	mwFuncs   []MiddlewareFunc
 	syncGroup *entity.SyncGroup
 }
 
@@ -25,9 +24,9 @@ func newConsumers(config kafka.ConfigMap) consumers {
 	}
 }
 
-func (c *consumers) getUniqByNameTopicSpecifications() []kafkaClient.TopicSpecifications {
+func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
 	topicsMap := make(map[string]struct{}, len(c.consumers))
-	topics := make([]kafkaClient.TopicSpecifications, 0, len(c.consumers))
+	topics := make([]TopicSpecifications, 0, len(c.consumers))
 
 	for _, consumer := range c.consumers {
 		if _, ok := topicsMap[consumer.Topic]; ok {
@@ -39,7 +38,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []kafkaClient.TopicSpecif
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler kafkaClient.Handler, topicSpecification kafkaClient.TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler Handler, topicSpecification TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {

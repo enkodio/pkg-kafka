@@ -1,24 +1,23 @@
-package logic
+package client
 
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
 	"gitlab.enkod.tech/pkg/kafka/internal/entity"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
 
 type consumer struct {
-	handler kafkaClient.Handler
-	kafkaClient.TopicSpecifications
+	handler Handler
+	TopicSpecifications
 	*kafka.Consumer
 }
 
 func newConsumer(
-	topicSpecifications kafkaClient.TopicSpecifications,
-	handler kafkaClient.Handler,
+	topicSpecifications TopicSpecifications,
+	handler Handler,
 ) *consumer {
 	return &consumer{
 		TopicSpecifications: topicSpecifications,
@@ -51,10 +50,10 @@ func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 	}
 }
 
-func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafkaClient.MiddlewareFunc) error {
+func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler kafkaClient.MessageHandler = func(ctx context.Context, message kafkaClient.CustomMessage) error {
+	var handler MessageHandler = func(ctx context.Context, message CustomMessage) error {
 		return c.handler(ctx, message.GetBody())
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {
@@ -73,7 +72,7 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafkaClie
 				}
 				return errors.Wrap(err, "cant read kafka message")
 			}
-			err = handler(context.Background(), kafkaClient.NewByKafkaMessage(msg))
+			err = handler(context.Background(), NewByKafkaMessage(msg))
 			if err != nil && c.CheckError {
 				log.WithError(err).Debug("try to read message again")
 				c.rollbackConsumerTransaction(msg.TopicPartition)

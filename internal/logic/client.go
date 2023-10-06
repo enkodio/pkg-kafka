@@ -77,7 +77,11 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}, he
 	if err != nil {
 		return errors.Wrap(err, "cant marshal data")
 	}
-	message := kafkaClient.NewMessage(topic, dataB, headers, "")
+	return c.PublishByte(ctx, topic, dataB, headers...)
+}
+
+func (c *client) PublishByte(ctx context.Context, topic string, data []byte, headers ...kafkaClient.Header) (err error) {
+	message := kafkaClient.NewMessage(topic, data, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)

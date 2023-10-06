@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/pkg/errors"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka"
-	"gitlab.enkod.tech/pkg/kafka/internal/entity"
+	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
 	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
 )
@@ -73,20 +72,20 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...entity.Header) (err error) {
+func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...kafkaClient.Header) (err error) {
 	dataB, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "cant marshal data")
 	}
-	message := entity.NewMessage(topic, dataB, headers, "")
+	message := kafkaClient.NewMessage(topic, dataB, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h kafkaClient.Handler, countConsumers int, specification entity.Specifications) {
+func (c *client) Subscribe(h kafkaClient.Handler, countConsumers int, specification kafkaClient.Specifications) {
 	log := logger.GetLogger()
-	topicSpecification := entity.NewTopicSpecifications(specification)
+	topicSpecification := kafkaClient.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)

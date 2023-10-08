@@ -71,9 +71,8 @@ func (c *client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}) (err error) {
+func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...Header) (err error) {
 	var dataB []byte
-
 	if dataS, ok := data.(string); ok {
 		dataB = []byte(dataS)
 	} else {
@@ -82,11 +81,11 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}) (e
 			return errors.Wrap(err, "cant marshal data")
 		}
 	}
-	return c.publishByte(ctx, topic, dataB)
+	return c.publishByte(ctx, topic, dataB, headers)
 }
 
-func (c *client) publishByte(ctx context.Context, topic string, data []byte) (err error) {
-	message := NewMessage(topic, data, "")
+func (c *client) publishByte(ctx context.Context, topic string, data []byte, headers []Header) (err error) {
+	message := NewMessage(topic, data, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)

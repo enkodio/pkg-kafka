@@ -17,7 +17,7 @@ type Client interface {
 	Pre(mw ...MiddlewareFunc)
 	StopSubscribe()
 	StopProduce()
-	Publish(context.Context, string, interface{}) error
+	Publish(context.Context, string, interface{}, ...Header) error
 	Subscribe(Handler, int, Specifications)
 	PrePublish(Pre)
 }

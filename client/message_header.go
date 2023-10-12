@@ -80,7 +80,3 @@ func (m MessageHeaders) toKafkaHeaders() []kafka.Header {
 func (m *MessageHeaders) setServiceName(serviceName string) {
 	m.SetHeader(serviceNameHeaderKey, []byte(serviceName))
 }
-
-func (m MessageHeaders) GetServiceName() string {
-	return string(m.GetValueByKey(serviceNameHeaderKey))
-}

@@ -41,14 +41,6 @@ func NewMessageHeaders(headers ...map[string][]byte) MessageHeaders {
 	return messageHeaders
 }
 
-func (m MessageHeaders) ToHeaders() []Header {
-	headers := make([]Header, len(m))
-	for i, h := range m {
-		headers[i] = h
-	}
-	return headers
-}
-
 func (m MessageHeaders) GetValueByKey(key string) []byte {
 	for _, header := range m {
 		if header.GetKey() == key {

@@ -12,17 +12,18 @@ type CustomMessage interface {
 }
 
 type Message struct {
-	Key     string  `json:"key"`
-	Headers Headers `json:"headers"`
-	Body    []byte  `json:"body"`
-	Topic   string  `json:"topic"`
+	Key     string         `json:"key"`
+	Headers MessageHeaders `json:"headers"`
+	Body    []byte         `json:"body"`
+	Topic   string         `json:"topic"`
 }
 
 func NewMessage(topic string, body []byte, headers Headers, key string) Message {
+
 	return Message{
 		Topic:   topic,
 		Body:    body,
-		Headers: headers.GetValidHeaders(),
+		Headers: NewMessageHeaders(headers),
 		Key:     key,
 	}
 }
@@ -40,7 +41,7 @@ func (m *Message) GetKey() string {
 }
 
 func (m *Message) GetHeaders() Headers {
-	return m.Headers
+	return m.Headers.ToHeaders()
 }
 
 func (m *Message) GetBody() []byte {

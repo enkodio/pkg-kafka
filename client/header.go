@@ -26,3 +26,7 @@ func (h *Headers) SetHeader(key string, value []byte) {
 		Value: value,
 	})
 }
+
+func (h Headers) GetServiceName() string {
+	return string(h.GetValueByKey(serviceNameHeaderKey))
+}

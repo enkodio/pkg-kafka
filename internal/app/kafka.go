@@ -31,7 +31,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 func getTestMiddleware() kafkaClient.MiddlewareFunc {
 	return func(next kafkaClient.MessageHandler) kafkaClient.MessageHandler {
-		return func(ctx context.Context, message kafkaClient.CustomMessage) error {
+		return func(ctx context.Context, message kafkaClient.Message) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}

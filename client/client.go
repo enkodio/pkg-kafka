@@ -87,7 +87,7 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}, he
 func (c *client) publishByte(ctx context.Context, topic string, data []byte, headers []Header) (err error) {
 	message := NewMessage(topic, data, headers, "")
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.setServiceName(c.serviceName)
+	//message.Headers.setServiceName(c.serviceName)
 	return c.producer.publish(ctx, message)
 }
 

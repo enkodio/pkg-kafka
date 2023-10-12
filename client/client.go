@@ -102,8 +102,6 @@ func (c *client) Subscribe(h Handler, countConsumers int, specification Specific
 		}
 	}
 }
-func (c *client) PrePublish(f interface{}) {
-	if pre, ok := f.(Pre); ok {
-		c.producer.prePublish = append(c.producer.prePublish, pre)
-	}
+func (c *client) PrePublish(f Pre) {
+	c.producer.prePublish = append(c.producer.prePublish, f)
 }

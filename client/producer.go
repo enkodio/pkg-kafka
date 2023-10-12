@@ -106,7 +106,7 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	deliveryChannel := make(chan kafka.Event)
 	p.syncGroup.Add(1)
 	for _, pre := range p.prePublish {
-		pre(ctx, &message)
+		pre.Get()(ctx, &message)
 	}
 	go p.handleDelivery(ctx, message, deliveryChannel)
 

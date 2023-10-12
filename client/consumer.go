@@ -53,7 +53,7 @@ func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler MessageHandler = func(ctx context.Context, message CustomMessage) error {
+	var handler MessageHandler = func(ctx context.Context, message Message) error {
 		return c.handler(ctx, message.GetBody())
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {

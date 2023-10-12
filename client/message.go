@@ -25,8 +25,8 @@ func NewMessage(topic string, body []byte, headers MessageHeaders, key string) M
 	}
 }
 
-func NewByKafkaMessage(message *kafka.Message) CustomMessage {
-	return &Message{
+func NewByKafkaMessage(message *kafka.Message) Message {
+	return Message{
 		Headers: NewByKafkaHeaders(message.Headers),
 		Body:    message.Value,
 		Topic:   *message.TopicPartition.Topic,

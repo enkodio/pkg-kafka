@@ -5,12 +5,12 @@ import (
 )
 
 type (
-	MessageHandler func(ctx context.Context, message CustomMessage) error
+	MessageHandler func(ctx context.Context, message Message) error
 	MiddlewareFunc func(next MessageHandler) MessageHandler
 )
 
 type Handler func(ctx context.Context, message []byte) error
-type Pre func(ctx context.Context, message CustomMessage)
+type Pre func(ctx context.Context, message *Message)
 
 type Client interface {
 	Start() error

@@ -47,9 +47,8 @@ func testConsumer(topic string, k kafkaClient.Client) {
 }
 
 func testProducer(topic string, k kafkaClient.Client) {
-	err := k.Publish(context.Background(), topic, "test", kafkaClient.MessageHeader{
-		Key:   "test",
-		Value: []byte("test"),
+	err := k.Publish(context.Background(), topic, "test", map[string][]byte{
+		"test": []byte("test"),
 	})
 	if err != nil {
 		logger.GetLogger().WithError(err).Error("produce err")

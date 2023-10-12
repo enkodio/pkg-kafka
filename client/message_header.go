@@ -60,10 +60,11 @@ func (m MessageHeaders) GetValueByKey(key string) []byte {
 }
 
 func (m *MessageHeaders) SetHeader(key string, value []byte) {
-	*m = append(*m, MessageHeader{
+	newHeader := MessageHeaders{MessageHeader{
 		Key:   key,
 		Value: value,
-	})
+	}}
+	*m = append(newHeader, *m...)
 }
 
 func (m MessageHeaders) toKafkaHeaders() []kafka.Header {

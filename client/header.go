@@ -9,24 +9,7 @@ type Header interface {
 	GetValue() []byte
 }
 
-type Headers []Header
-
-func (h Headers) GetValueByKey(key string) []byte {
-	for _, header := range h {
-		if header.GetKey() == key {
-			return header.GetValue()
-		}
-	}
-	return nil
-}
-
-func (h *Headers) SetHeader(key string, value []byte) {
-	*h = append(*h, &MessageHeader{
-		Key:   key,
-		Value: value,
-	})
-}
-
-func (h Headers) GetServiceName() string {
-	return string(h.GetValueByKey(serviceNameHeaderKey))
+type Headers interface {
+	SetHeader(key string, value []byte)
+	GetValueByKey(key string) []byte
 }

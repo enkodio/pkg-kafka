@@ -28,7 +28,7 @@ func NewByKafkaHeaders(kafkaHeaders []kafka.Header) MessageHeaders {
 	return headers
 }
 
-func NewMessageHeaders(headers Headers) MessageHeaders {
+func NewMessageHeaders(headers []Header) MessageHeaders {
 	messageHeaders := make(MessageHeaders, 0, len(headers))
 	for _, h := range headers {
 		if h == nil {
@@ -42,8 +42,8 @@ func NewMessageHeaders(headers Headers) MessageHeaders {
 	return messageHeaders
 }
 
-func (m MessageHeaders) ToHeaders() Headers {
-	headers := make(Headers, len(m))
+func (m MessageHeaders) ToHeaders() []Header {
+	headers := make([]Header, len(m))
 	for i, h := range m {
 		headers[i] = h
 	}

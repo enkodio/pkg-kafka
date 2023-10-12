@@ -6,9 +6,9 @@ import (
 
 type CustomMessage interface {
 	GetKey() string
-	GetHeaders() Headers
 	GetBody() []byte
 	GetTopic() string
+	Headers
 }
 
 type Message struct {
@@ -18,12 +18,11 @@ type Message struct {
 	Topic   string         `json:"topic"`
 }
 
-func NewMessage(topic string, body []byte, headers Headers, key string) Message {
-
+func NewMessage(topic string, body []byte, headers MessageHeaders, key string) Message {
 	return Message{
 		Topic:   topic,
 		Body:    body,
-		Headers: NewMessageHeaders(headers),
+		Headers: headers,
 		Key:     key,
 	}
 }
@@ -38,10 +37,6 @@ func NewByKafkaMessage(message *kafka.Message) CustomMessage {
 
 func (m *Message) GetKey() string {
 	return m.Key
-}
-
-func (m *Message) GetHeaders() Headers {
-	return m.Headers.ToHeaders()
 }
 
 func (m *Message) GetBody() []byte {
@@ -64,4 +59,12 @@ func (m *Message) ToKafkaMessage() *kafka.Message {
 		Value:   m.Body,
 		Headers: m.Headers.toKafkaHeaders(),
 	}
+}
+
+func (m *Message) SetHeader(key string, value []byte) {
+	m.Headers.SetHeader(key, value)
+}
+
+func (m *Message) GetValueByKey(key string) []byte {
+	return m.Headers.GetValueByKey(key)
 }

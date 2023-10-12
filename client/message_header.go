@@ -28,16 +28,15 @@ func NewByKafkaHeaders(kafkaHeaders []kafka.Header) MessageHeaders {
 	return headers
 }
 
-func NewMessageHeaders(headers []Header) MessageHeaders {
+func NewMessageHeaders(headers ...map[string][]byte) MessageHeaders {
 	messageHeaders := make(MessageHeaders, 0, len(headers))
 	for _, h := range headers {
-		if h == nil {
-			continue
+		for key, value := range h {
+			messageHeaders = append(messageHeaders, MessageHeader{
+				Key:   key,
+				Value: value,
+			})
 		}
-		messageHeaders = append(messageHeaders, MessageHeader{
-			Key:   h.GetKey(),
-			Value: h.GetValue(),
-		})
 	}
 	return messageHeaders
 }

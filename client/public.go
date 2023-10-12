@@ -10,7 +10,7 @@ type (
 )
 
 type Handler func(ctx context.Context, message []byte) error
-type Pre func(ctx context.Context, message *Message)
+type Pre func(ctx context.Context, message CustomMessage)
 
 type Client interface {
 	Start() error

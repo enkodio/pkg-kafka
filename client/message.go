@@ -33,16 +33,8 @@ func NewByKafkaMessage(message *kafka.Message) CustomMessage {
 	}
 }
 
-func (m *Message) GetKey() string {
-	return m.Key
-}
-
 func (m *Message) GetBody() []byte {
 	return m.Body
-}
-
-func (m *Message) GetTopic() string {
-	return m.Topic
 }
 
 func (m *Message) GetBodyAsString() string {

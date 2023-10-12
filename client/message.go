@@ -5,9 +5,7 @@ import (
 )
 
 type CustomMessage interface {
-	GetKey() string
 	GetBody() []byte
-	GetTopic() string
 	Headers
 }
 

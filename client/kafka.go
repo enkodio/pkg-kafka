@@ -2,8 +2,8 @@ package client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/sirupsen/logrus"
-	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 )
 
 func NewClient(

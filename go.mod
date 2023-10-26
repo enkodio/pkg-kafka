@@ -1,4 +1,4 @@
-module gitlab.enkod.tech/pkg/kafka
+module github.com/enkodio/pkg-kafka
 
 go 1.21
 

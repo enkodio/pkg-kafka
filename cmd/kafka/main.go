@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/enkodio/pkg-kafka/internal/app"
+	"github.com/enkodio/pkg-kafka/pkg/config"
 	log "github.com/sirupsen/logrus"
-	"gitlab.enkod.tech/pkg/kafka/internal/app"
-	"gitlab.enkod.tech/pkg/kafka/pkg/config"
 	"os"
 )
 

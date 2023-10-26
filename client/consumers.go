@@ -2,9 +2,9 @@ package client
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/internal/entity"
+	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/pkg/errors"
-	"gitlab.enkod.tech/pkg/kafka/internal/entity"
-	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"sync"
 	"time"
 )

@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	kafkaClient "gitlab.enkod.tech/pkg/kafka/client"
-	configEntity "gitlab.enkod.tech/pkg/kafka/pkg/config/entity"
-	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
+	kafkaClient "github.com/enkodio/pkg-kafka/client"
+	configEntity "github.com/enkodio/pkg-kafka/pkg/config/entity"
+	"github.com/enkodio/pkg-kafka/pkg/logger"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {

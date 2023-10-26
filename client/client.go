@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/pkg/logger"
 	"github.com/pkg/errors"
-	"gitlab.enkod.tech/pkg/kafka/pkg/logger"
 	"time"
 )
 

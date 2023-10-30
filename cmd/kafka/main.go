@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/enkodio/pkg-kafka/internal/app"
-	"github.com/enkodio/pkg-kafka/pkg/config"
+	"github.com/enkodio/pkg-kafka/internal/config"
 	log "github.com/sirupsen/logrus"
 	"os"
 )

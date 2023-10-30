@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/enkodio/pkg-kafka/pkg/config/entity"
+	"github.com/enkodio/pkg-kafka/internal/config/entity"
 	"io/ioutil"
 	"log"
 )

@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	kafkaClient "github.com/enkodio/pkg-kafka/client"
-	configEntity "github.com/enkodio/pkg-kafka/pkg/config/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
+	configEntity "github.com/enkodio/pkg-kafka/internal/config/entity"
+	"github.com/enkodio/pkg-kafka/internal/logger"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {

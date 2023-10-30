@@ -3,7 +3,7 @@ package client
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/entity"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
+	"github.com/enkodio/pkg-kafka/internal/logger"
 	"github.com/pkg/errors"
 	"sync"
 	"time"

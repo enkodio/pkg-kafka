@@ -1,10 +1,12 @@
-package client
+package logic
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/pkg/logger"
+	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
+	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -12,29 +14,26 @@ import (
 const (
 	// Время ожидания, пока очередь в буфере продусера переполнена
 	queueFullWaitTime = time.Second * 5
-
-	reconnectTime = time.Second * 10
-
-	flushTimeout = 5000
-
-	readTimeout = time.Second
+	reconnectTime     = time.Second * 10
+	flushTimeout      = 5000
+	readTimeout       = time.Second
 )
 
-type client struct {
+type Client struct {
 	serviceName string
 	topicPrefix string
 	consumers   consumers
 	producer    *producer
 }
 
-func newClient(
-	producerConfig kafka.ConfigMap,
-	consumerConfig kafka.ConfigMap,
+func NewClient(
+	producerConfig cKafka.ConfigMap,
+	consumerConfig cKafka.ConfigMap,
 	serviceName string,
 	prefix string,
-) Client {
+) *Client {
 	consumerConfig["group.id"] = serviceName
-	return &client{
+	return &Client{
 		serviceName: serviceName,
 		producer:    newProducer(producerConfig),
 		consumers:   newConsumers(consumerConfig),
@@ -42,7 +41,7 @@ func newClient(
 	}
 }
 
-func (c *client) Start() (err error) {
+func (c *Client) Start() (err error) {
 	err = c.producer.initProducer()
 	if err != nil {
 		return
@@ -57,21 +56,21 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...MiddlewareFunc) {
+func (c *Client) Pre(mw ...kafka.MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
 }
 
-func (c *client) StopSubscribe() {
+func (c *Client) StopSubscribe() {
 	c.consumers.stopConsumers()
 }
 
-func (c *client) StopProduce() {
+func (c *Client) StopProduce() {
 	c.producer.stop()
 }
 
-func (c *client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
+func (c *Client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
 	var dataB []byte
 	if dataS, ok := data.(string); ok {
 		dataB = []byte(dataS)
@@ -84,16 +83,16 @@ func (c *client) Publish(ctx context.Context, topic string, data interface{}, he
 	return c.publishByte(ctx, topic, dataB, headers...)
 }
 
-func (c *client) publishByte(ctx context.Context, topic string, data []byte, headers ...map[string][]byte) (err error) {
-	message := NewMessage(topic, data, NewMessageHeaders(headers...), "")
+func (c *Client) publishByte(ctx context.Context, topic string, data []byte, headers ...map[string][]byte) (err error) {
+	message := kafka.NewMessage(topic, data, kafka.NewMessageHeaders(headers...), "")
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.setServiceName(c.serviceName)
+	message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h Handler, countConsumers int, specification Specifications) {
+func (c *Client) Subscribe(h kafka.Handler, countConsumers int, specification kafka.Specifications) {
 	log := logger.GetLogger()
-	topicSpecification := NewTopicSpecifications(specification)
+	topicSpecification := entity.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)
@@ -102,6 +101,6 @@ func (c *client) Subscribe(h Handler, countConsumers int, specification Specific
 		}
 	}
 }
-func (c *client) PrePublish(f Pre) {
+func (c *Client) PrePublish(f kafka.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

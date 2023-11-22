@@ -1,4 +1,4 @@
-package client
+package kafka
 
 import "github.com/confluentinc/confluent-kafka-go/kafka"
 
@@ -16,17 +16,6 @@ func (m MessageHeader) GetValue() []byte {
 }
 
 type MessageHeaders []MessageHeader
-
-func NewByKafkaHeaders(kafkaHeaders []kafka.Header) MessageHeaders {
-	var headers = make(MessageHeaders, len(kafkaHeaders))
-	for i := 0; i < len(kafkaHeaders); i++ {
-		headers[i] = MessageHeader{
-			Key:   kafkaHeaders[i].Key,
-			Value: kafkaHeaders[i].Value,
-		}
-	}
-	return headers
-}
 
 func NewMessageHeaders(headers ...map[string][]byte) MessageHeaders {
 	messageHeaders := make(MessageHeaders, 0, len(headers))
@@ -66,8 +55,4 @@ func (m MessageHeaders) toKafkaHeaders() []kafka.Header {
 		}
 	}
 	return headers
-}
-
-func (m *MessageHeaders) setServiceName(serviceName string) {
-	m.SetHeader(serviceNameHeaderKey, []byte(serviceName))
 }

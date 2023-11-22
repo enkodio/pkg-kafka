@@ -3,8 +3,9 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -28,11 +29,11 @@ type client struct {
 }
 
 func newClient(
-	producerConfig kafka.ConfigMap,
-	consumerConfig kafka.ConfigMap,
+	producerConfig cKafka.ConfigMap,
+	consumerConfig cKafka.ConfigMap,
 	serviceName string,
 	prefix string,
-) Client {
+) kafka.Client {
 	consumerConfig["group.id"] = serviceName
 	return &client{
 		serviceName: serviceName,
@@ -57,7 +58,7 @@ func (c *client) Start() (err error) {
 	return
 }
 
-func (c *client) Pre(mw ...MiddlewareFunc) {
+func (c *client) Pre(mw ...kafka.MiddlewareFunc) {
 	for _, v := range mw {
 		c.consumers.mwFuncs = append(c.consumers.mwFuncs, v)
 	}
@@ -91,7 +92,7 @@ func (c *client) publishByte(ctx context.Context, topic string, data []byte, hea
 	return c.producer.publish(ctx, message)
 }
 
-func (c *client) Subscribe(h Handler, countConsumers int, specification Specifications) {
+func (c *client) Subscribe(h kafka.Handler, countConsumers int, specification Specifications) {
 	log := logger.GetLogger()
 	topicSpecification := NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
@@ -102,6 +103,6 @@ func (c *client) Subscribe(h Handler, countConsumers int, specification Specific
 		}
 	}
 }
-func (c *client) PrePublish(f Pre) {
+func (c *client) PrePublish(f kafka.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

@@ -3,22 +3,23 @@ package client
 import (
 	"context"
 	"github.com/CossackPyra/pyraconv"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"time"
 )
 
 type producer struct {
-	config        kafka.ConfigMap
-	kafkaProducer *kafka.Producer
+	config        cKafka.ConfigMap
+	kafkaProducer *cKafka.Producer
 	syncGroup     *entity.SyncGroup
-	prePublish    []Pre
+	prePublish    []kafka.Pre
 }
 
-func newProducer(config kafka.ConfigMap) *producer {
+func newProducer(config cKafka.ConfigMap) *producer {
 	config["client.id"] = uuid.New().String()
 
 	// FIXME Два костыля, нужно подумать, что делать с тем, что с консула числа маршлятся во float64
@@ -32,7 +33,7 @@ func newProducer(config kafka.ConfigMap) *producer {
 
 func (p *producer) initProducer() (err error) {
 	log := logger.GetLogger()
-	p.kafkaProducer, err = kafka.NewProducer(&p.config)
+	p.kafkaProducer, err = cKafka.NewProducer(&p.config)
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka producer")
 	}
@@ -46,12 +47,12 @@ func (p *producer) stop() {
 	p.kafkaProducer.Close()
 }
 
-func (p *producer) produce(ctx context.Context, message *kafka.Message, deliveryChannel chan kafka.Event) error {
+func (p *producer) produce(ctx context.Context, message *cKafka.Message, deliveryChannel chan cKafka.Event) error {
 	log := logger.FromContext(ctx)
 	for {
 		err := p.kafkaProducer.Produce(message, deliveryChannel)
 		if err != nil {
-			if err.(kafka.Error).Code() == kafka.ErrQueueFull {
+			if err.(cKafka.Error).Code() == cKafka.ErrQueueFull {
 				// Если очередь забита, пробуем отправить снова через 5 секунд
 				log.WithError(err).
 					Warnf("kafka queue full, try again after %v second", queueFullWaitTime.Seconds())
@@ -68,15 +69,15 @@ func (p *producer) produce(ctx context.Context, message *kafka.Message, delivery
 
 func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
-	adminClient, err := kafka.NewAdminClientFromProducer(p.kafkaProducer)
+	adminClient, err := cKafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
 		return errors.Wrap(err, "cant init kafka admin client")
 	}
 	defer adminClient.Close()
 	log := logger.GetLogger()
-	specifications := make([]kafka.TopicSpecification, 0, len(topics))
+	specifications := make([]cKafka.TopicSpecification, 0, len(topics))
 	for _, topic := range topics {
-		specification := kafka.TopicSpecification{
+		specification := cKafka.TopicSpecification{
 			Topic:             topic.Topic,
 			ReplicationFactor: topic.GetReplicationFactor(),
 			NumPartitions:     topic.GetNumPartitions(),
@@ -89,7 +90,7 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	}
 	for _, v := range result {
 		if kafkaErr, ok := errToKafka(v.Error); ok {
-			if kafkaErr.Code() == kafka.ErrTopicAlreadyExists {
+			if kafkaErr.Code() == cKafka.ErrTopicAlreadyExists {
 				continue
 			}
 		}
@@ -103,7 +104,7 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	if p.syncGroup.IsClosed() {
 		return errors.New("producer was closed")
 	}
-	deliveryChannel := make(chan kafka.Event)
+	deliveryChannel := make(chan cKafka.Event)
 	p.syncGroup.Add(1)
 	for _, pre := range p.prePublish {
 		pre(ctx, &message)
@@ -121,13 +122,13 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan kafka.Event) {
+func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan cKafka.Event) {
 	defer p.syncGroup.Done()
 	log := logger.FromContext(ctx)
 	e := <-deliveryChannel
 	close(deliveryChannel)
 	switch event := e.(type) {
-	case *kafka.Message:
+	case *cKafka.Message:
 		if kafkaErr, ok := errToKafka(event.TopicPartition.Error); ok {
 			// Если retriable, то ошибка временная, нужно пытаться переотправить снова, если нет, то ошибка nonretriable, просто логируем
 			if kafkaErr.IsRetriable() {
@@ -146,7 +147,7 @@ func (p *producer) handleDelivery(ctx context.Context, message Message, delivery
 						message.Topic, message.GetBodyAsString(), kafkaErr.IsFatal())
 			}
 		}
-	case kafka.Error:
+	case cKafka.Error:
 		// Общие пользовательские ошибки, клиент сам пытается переотправить, просто логируем
 		log.WithError(event).
 			Errorf("publish error, topic: %v, message: %v. client tries to send again", message.Topic, message.GetBodyAsString())

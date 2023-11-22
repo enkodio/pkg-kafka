@@ -2,22 +2,23 @@ package client
 
 import (
 	"context"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 )
 
 type consumer struct {
-	handler Handler
+	handler kafka.Handler
 	TopicSpecifications
-	*kafka.Consumer
+	*cKafka.Consumer
 }
 
 func newConsumer(
 	topicSpecifications TopicSpecifications,
-	handler Handler,
+	handler kafka.Handler,
 ) *consumer {
 	return &consumer{
 		TopicSpecifications: topicSpecifications,
@@ -25,10 +26,10 @@ func newConsumer(
 	}
 }
 
-func (c *consumer) initConsumer(config kafka.ConfigMap) error {
+func (c *consumer) initConsumer(config cKafka.ConfigMap) error {
 	config["client.id"] = uuid.New().String()
 	// Создаём консумера
-	kafkaConsumer, err := kafka.NewConsumer(&config)
+	kafkaConsumer, err := cKafka.NewConsumer(&config)
 	if err != nil {
 		return errors.Wrap(err, "cant create kafka consumer")
 	}
@@ -41,8 +42,8 @@ func (c *consumer) initConsumer(config kafka.ConfigMap) error {
 	return nil
 }
 
-func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
-	return func(c *kafka.Consumer, event kafka.Event) error {
+func (c *consumer) getRebalanceCb() cKafka.RebalanceCb {
+	return func(c *cKafka.Consumer, event cKafka.Event) error {
 		logger.GetLogger().Debugf("Rebalanced: %v; rebalanced protocol: %v;",
 			event.String(),
 			c.GetRebalanceProtocol())
@@ -50,10 +51,10 @@ func (c *consumer) getRebalanceCb() kafka.RebalanceCb {
 	}
 }
 
-func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []MiddlewareFunc) error {
+func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafka.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler MessageHandler = func(ctx context.Context, message Message) error {
+	var handler kafka.MessageHandler = func(ctx context.Context, message Message) error {
 		return c.handler(ctx, message.GetBody())
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {
@@ -67,7 +68,7 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []Middlewar
 			msg, err := c.ReadMessage(readTimeout)
 			if kafkaErr, ok := errToKafka(err); ok {
 				// Если retriable (но со стороны консумера вроде бы такого нет), то пробуем снова
-				if kafkaErr.Code() == kafka.ErrTimedOut || kafkaErr.IsRetriable() {
+				if kafkaErr.Code() == cKafka.ErrTimedOut || kafkaErr.IsRetriable() {
 					continue
 				}
 				return errors.Wrap(err, "cant read kafka message")
@@ -81,16 +82,16 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []Middlewar
 	}
 }
 
-func (c *consumer) rollbackConsumerTransaction(topicPartition kafka.TopicPartition) {
+func (c *consumer) rollbackConsumerTransaction(topicPartition cKafka.TopicPartition) {
 	// В committed лежит массив из одного элемента, потому что передаём одну партицию, которую нужно сбросить
-	committed, err := c.Committed([]kafka.TopicPartition{{Topic: &c.Topic, Partition: topicPartition.Partition}}, -1)
+	committed, err := c.Committed([]cKafka.TopicPartition{{Topic: &c.Topic, Partition: topicPartition.Partition}}, -1)
 	log := logger.GetLogger()
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	if committed[0].Offset < 0 {
-		committed[0].Offset = kafka.OffsetBeginning
+		committed[0].Offset = cKafka.OffsetBeginning
 	} else {
 		committed[0].Offset = topicPartition.Offset
 	}

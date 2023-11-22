@@ -5,6 +5,7 @@ import (
 	kafkaClient "github.com/enkodio/pkg-kafka/client"
 	configEntity "github.com/enkodio/pkg-kafka/internal/pkg/config/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
@@ -29,8 +30,8 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 	select {}
 }
 
-func getTestMiddleware() kafkaClient.MiddlewareFunc {
-	return func(next kafkaClient.MessageHandler) kafkaClient.MessageHandler {
+func getTestMiddleware() kafka.MiddlewareFunc {
+	return func(next kafka.MessageHandler) kafka.MessageHandler {
 		return func(ctx context.Context, message kafkaClient.Message) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
@@ -38,7 +39,7 @@ func getTestMiddleware() kafkaClient.MiddlewareFunc {
 	}
 }
 
-func testConsumer(topic string, k kafkaClient.Client) {
+func testConsumer(topic string, k kafka.Client) {
 	k.Subscribe(testHandler, 1, &kafkaClient.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
@@ -46,7 +47,7 @@ func testConsumer(topic string, k kafkaClient.Client) {
 	})
 }
 
-func testProducer(topic string, k kafkaClient.Client) {
+func testProducer(topic string, k kafka.Client) {
 	err := k.Publish(context.Background(), topic, "test", map[string][]byte{
 		"test": []byte("test"),
 	})

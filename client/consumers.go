@@ -1,22 +1,23 @@
 package client
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
+	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
 	"sync"
 	"time"
 )
 
 type consumers struct {
-	config    kafka.ConfigMap
+	config    cKafka.ConfigMap
 	consumers []*consumer
-	mwFuncs   []MiddlewareFunc
+	mwFuncs   []kafka.MiddlewareFunc
 	syncGroup *entity.SyncGroup
 }
 
-func newConsumers(config kafka.ConfigMap) consumers {
+func newConsumers(config cKafka.ConfigMap) consumers {
 	return consumers{
 		config:    config,
 		consumers: make([]*consumer, 0),
@@ -38,7 +39,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler Handler, topicSpecification TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler kafka.Handler, topicSpecification TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {
@@ -65,7 +66,7 @@ func (c *consumers) stopConsumers() {
 	for i := range c.consumers {
 		_, err := c.consumers[i].Commit()
 		if kafkaErr, ok := errToKafka(err); ok {
-			if kafkaErr.Code() != kafka.ErrNoOffset {
+			if kafkaErr.Code() != cKafka.ErrNoOffset {
 				log.WithError(err).Errorf("cant commit offset for topic: %s", err.Error())
 			}
 		}

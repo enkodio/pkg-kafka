@@ -5,7 +5,7 @@ import (
 	"github.com/CossackPyra/pyraconv"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/entity"
-	"github.com/enkodio/pkg-kafka/internal/logger"
+	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"time"

@@ -2,6 +2,7 @@ package client
 
 import (
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/internal/kafka/logic"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ func NewClient(
 		logger.SetDefaultLogger("debug")
 	}
 
-	return newClient(producerConfig, consumerConfig, serviceName, prefix)
+	return logic.NewClient(producerConfig, consumerConfig, serviceName, prefix)
 }
 
 func Start(client kafka.Client) {

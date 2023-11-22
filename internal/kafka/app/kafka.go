@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	kafkaClient "github.com/enkodio/pkg-kafka/client"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	configEntity "github.com/enkodio/pkg-kafka/internal/pkg/config/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
@@ -32,7 +33,7 @@ func Run(configSettings configEntity.Settings, serviceName string) {
 
 func getTestMiddleware() kafka.MiddlewareFunc {
 	return func(next kafka.MessageHandler) kafka.MessageHandler {
-		return func(ctx context.Context, message kafkaClient.Message) error {
+		return func(ctx context.Context, message kafka.Message) error {
 			logger.GetLogger().Info("got middleware")
 			return next(ctx, message)
 		}
@@ -40,7 +41,7 @@ func getTestMiddleware() kafka.MiddlewareFunc {
 }
 
 func testConsumer(topic string, k kafka.Client) {
-	k.Subscribe(testHandler, 1, &kafkaClient.TopicSpecifications{
+	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,

@@ -1,10 +1,10 @@
-package client
+package logic
 
 import (
 	"context"
 	"github.com/CossackPyra/pyraconv"
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/google/uuid"
@@ -67,7 +67,7 @@ func (p *producer) produce(ctx context.Context, message *cKafka.Message, deliver
 	return nil
 }
 
-func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := cKafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {
@@ -100,7 +100,7 @@ func (p *producer) createTopics(topics []TopicSpecifications) (err error) {
 	return nil
 }
 
-func (p *producer) publish(ctx context.Context, message Message) (err error) {
+func (p *producer) publish(ctx context.Context, message kafka.Message) (err error) {
 	if p.syncGroup.IsClosed() {
 		return errors.New("producer was closed")
 	}
@@ -122,7 +122,7 @@ func (p *producer) publish(ctx context.Context, message Message) (err error) {
 	return
 }
 
-func (p *producer) handleDelivery(ctx context.Context, message Message, deliveryChannel chan cKafka.Event) {
+func (p *producer) handleDelivery(ctx context.Context, message kafka.Message, deliveryChannel chan cKafka.Event) {
 	defer p.syncGroup.Done()
 	log := logger.FromContext(ctx)
 	e := <-deliveryChannel

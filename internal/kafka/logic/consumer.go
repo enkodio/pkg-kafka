@@ -1,9 +1,9 @@
-package client
+package logic
 
 import (
 	"context"
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/google/uuid"
@@ -12,12 +12,12 @@ import (
 
 type consumer struct {
 	handler kafka.Handler
-	TopicSpecifications
+	entity.TopicSpecifications
 	*cKafka.Consumer
 }
 
 func newConsumer(
-	topicSpecifications TopicSpecifications,
+	topicSpecifications entity.TopicSpecifications,
 	handler kafka.Handler,
 ) *consumer {
 	return &consumer{
@@ -54,7 +54,7 @@ func (c *consumer) getRebalanceCb() cKafka.RebalanceCb {
 func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafka.MiddlewareFunc) error {
 	log := logger.GetLogger()
 	// Прогоняем хендлер через миддлверы
-	var handler kafka.MessageHandler = func(ctx context.Context, message Message) error {
+	var handler kafka.MessageHandler = func(ctx context.Context, message kafka.Message) error {
 		return c.handler(ctx, message.GetBody())
 	}
 	for j := len(mwFuncs) - 1; j >= 0; j-- {
@@ -73,7 +73,7 @@ func (c *consumer) startConsume(syncGroup *entity.SyncGroup, mwFuncs []kafka.Mid
 				}
 				return errors.Wrap(err, "cant read kafka message")
 			}
-			err = handler(context.Background(), NewByKafkaMessage(msg))
+			err = handler(context.Background(), entity.NewByKafkaMessage(msg))
 			if err != nil && c.CheckError {
 				log.WithError(err).Debug("try to read message again")
 				c.rollbackConsumerTransaction(msg.TopicPartition)

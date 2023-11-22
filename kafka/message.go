@@ -1,13 +1,8 @@
-package client
+package kafka
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
-
-type CustomMessage interface {
-	GetBody() []byte
-	Headers
-}
 
 type Message struct {
 	Key     string         `json:"key"`
@@ -22,14 +17,6 @@ func NewMessage(topic string, body []byte, headers MessageHeaders, key string) M
 		Body:    body,
 		Headers: headers,
 		Key:     key,
-	}
-}
-
-func NewByKafkaMessage(message *kafka.Message) Message {
-	return Message{
-		Headers: NewByKafkaHeaders(message.Headers),
-		Body:    message.Value,
-		Topic:   *message.TopicPartition.Topic,
 	}
 }
 

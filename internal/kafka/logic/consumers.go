@@ -1,8 +1,8 @@
-package client
+package logic
 
 import (
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/entity"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
@@ -25,9 +25,9 @@ func newConsumers(config cKafka.ConfigMap) consumers {
 	}
 }
 
-func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
+func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecifications {
 	topicsMap := make(map[string]struct{}, len(c.consumers))
-	topics := make([]TopicSpecifications, 0, len(c.consumers))
+	topics := make([]entity.TopicSpecifications, 0, len(c.consumers))
 
 	for _, consumer := range c.consumers {
 		if _, ok := topicsMap[consumer.Topic]; ok {
@@ -39,7 +39,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []TopicSpecifications {
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler kafka.Handler, topicSpecification TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler kafka.Handler, topicSpecification entity.TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {

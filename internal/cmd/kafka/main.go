@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/enkodio/pkg-kafka/internal/app"
-	"github.com/enkodio/pkg-kafka/internal/config"
+	"github.com/enkodio/pkg-kafka/internal/kafka/app"
+	"github.com/enkodio/pkg-kafka/internal/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"os"
 )
@@ -12,7 +12,7 @@ const (
 )
 
 func main() {
-	configSettings, err := config.LoadConfigSettingsByPath("configs")
+	configSettings, err := config.LoadConfigSettingsByPath("internal/cmd/configs")
 	if err != nil {
 		log.Error(err)
 		os.Exit(2)

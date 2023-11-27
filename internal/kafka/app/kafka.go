@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	kafkaClient "github.com/enkodio/pkg-kafka/client"
-	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	configEntity "github.com/enkodio/pkg-kafka/internal/pkg/config/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
@@ -41,7 +40,7 @@ func getTestMiddleware() kafka.MiddlewareFunc {
 }
 
 func testConsumer(topic string, k kafka.Client) {
-	k.Subscribe(testHandler, 1, &entity.TopicSpecifications{
+	k.Subscribe(testHandler, 1, &kafka.TopicSpecifications{
 		NumPartitions:     1,
 		ReplicationFactor: 1,
 		Topic:             topic,

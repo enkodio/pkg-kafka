@@ -67,7 +67,7 @@ func (p *producer) produce(ctx context.Context, message *cKafka.Message, deliver
 	return nil
 }
 
-func (p *producer) createTopics(topics []entity.TopicSpecifications) (err error) {
+func (p *producer) createTopics(topics []kafka.TopicSpecifications) (err error) {
 	// Создаём админский клиент через настройки подключения продусера
 	adminClient, err := cKafka.NewAdminClientFromProducer(p.kafkaProducer)
 	if err != nil {

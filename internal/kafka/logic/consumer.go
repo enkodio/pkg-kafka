@@ -12,12 +12,12 @@ import (
 
 type consumer struct {
 	handler kafka.Handler
-	entity.TopicSpecifications
+	kafka.TopicSpecifications
 	*cKafka.Consumer
 }
 
 func newConsumer(
-	topicSpecifications entity.TopicSpecifications,
+	topicSpecifications kafka.TopicSpecifications,
 	handler kafka.Handler,
 ) *consumer {
 	return &consumer{

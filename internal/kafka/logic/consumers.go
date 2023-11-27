@@ -25,9 +25,9 @@ func newConsumers(config cKafka.ConfigMap) consumers {
 	}
 }
 
-func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecifications {
+func (c *consumers) getUniqByNameTopicSpecifications() []kafka.TopicSpecifications {
 	topicsMap := make(map[string]struct{}, len(c.consumers))
-	topics := make([]entity.TopicSpecifications, 0, len(c.consumers))
+	topics := make([]kafka.TopicSpecifications, 0, len(c.consumers))
 
 	for _, consumer := range c.consumers {
 		if _, ok := topicsMap[consumer.Topic]; ok {
@@ -39,7 +39,7 @@ func (c *consumers) getUniqByNameTopicSpecifications() []entity.TopicSpecificati
 	return topics
 }
 
-func (c *consumers) addNewConsumer(handler kafka.Handler, topicSpecification entity.TopicSpecifications) error {
+func (c *consumers) addNewConsumer(handler kafka.Handler, topicSpecification kafka.TopicSpecifications) error {
 	newConsumer := newConsumer(topicSpecification, handler)
 	err := newConsumer.initConsumer(c.config)
 	if err != nil {

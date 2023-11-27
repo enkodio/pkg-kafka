@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
@@ -92,7 +91,7 @@ func (c *Client) publishByte(ctx context.Context, topic string, data []byte, hea
 
 func (c *Client) Subscribe(h kafka.Handler, countConsumers int, specification kafka.Specifications) {
 	log := logger.GetLogger()
-	topicSpecification := entity.NewTopicSpecifications(specification)
+	topicSpecification := kafka.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)

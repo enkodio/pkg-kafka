@@ -100,6 +100,7 @@ func (c *Client) Subscribe(h kafka.Handler, countConsumers int, specification ka
 		}
 	}
 }
+
 func (c *Client) PrePublish(f kafka.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

@@ -2,8 +2,8 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
 	"github.com/enkodio/pkg-kafka/kafka"
 	"github.com/pkg/errors"
@@ -70,20 +70,15 @@ func (c *Client) StopProduce() {
 }
 
 func (c *Client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
-	var dataB []byte
-	if dataS, ok := data.(string); ok {
-		dataB = []byte(dataS)
-	} else {
-		dataB, err = json.Marshal(data)
-		if err != nil {
-			return errors.Wrap(err, "cant marshal data")
-		}
+	publicationData, err := entity.NewPublishData(ctx, data)
+	if err != nil {
+		return errors.Wrap(err, "cant get publish data")
 	}
-	return c.publishByte(ctx, topic, dataB, headers...)
+	return c.publishByte(ctx, topic, publicationData, headers...)
 }
 
-func (c *Client) publishByte(ctx context.Context, topic string, data []byte, headers ...map[string][]byte) (err error) {
-	message := kafka.NewMessage(topic, data, kafka.NewMessageHeaders(headers...), "")
+func (c *Client) publishByte(ctx context.Context, topic string, data entity.PublicationData, headers ...map[string][]byte) (err error) {
+	message := kafka.NewMessage(topic, data.Value, kafka.NewMessageHeaders(headers...), data.Key)
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)

@@ -5,13 +5,13 @@ import (
 )
 
 type Message struct {
-	Key     string         `json:"key"`
+	Key     []byte         `json:"key"`
 	Headers MessageHeaders `json:"headers"`
 	Body    []byte         `json:"body"`
 	Topic   string         `json:"topic"`
 }
 
-func NewMessage(topic string, body []byte, headers MessageHeaders, key string) Message {
+func NewMessage(topic string, body []byte, headers MessageHeaders, key []byte) Message {
 	return Message{
 		Topic:   topic,
 		Body:    body,
@@ -35,6 +35,7 @@ func (m *Message) ToKafkaMessage() *kafka.Message {
 			Partition: kafka.PartitionAny},
 		Value:   m.Body,
 		Headers: m.Headers.toKafkaHeaders(),
+		Key:     m.Key,
 	}
 }
 

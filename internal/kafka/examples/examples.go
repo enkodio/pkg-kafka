@@ -70,3 +70,43 @@ func RunWithKey(configSettings configEntity.Settings, serviceName string) {
 	})
 	k.StopProduce()
 }
+
+func RunWithPublicPublishingData(configSettings configEntity.Settings, serviceName string) {
+	const (
+		testTopic = "test_topic_public_publishing_data"
+	)
+
+	//broker clients
+	var (
+		k = kafkaClient.NewClient(configSettings.KafkaProducer, configSettings.KafkaConsumer, serviceName, nil, "")
+	)
+
+	testConsumer(k, testHandler("first consumer"), kafka.TopicSpecifications{
+		Topic:             testTopic,
+		NumPartitions:     2,
+		ReplicationFactor: 1,
+	})
+	testConsumer(k, testHandler("second consumer"), kafka.TopicSpecifications{
+		Topic:             testTopic,
+		NumPartitions:     2,
+		ReplicationFactor: 1,
+	})
+
+	k.Pre(
+		getTestMiddleware(),
+	)
+	kafkaClient.Start(k)
+	testProducer(k, testTopic, kafka.PublicationData{
+		Value: []byte("1"),
+		Key:   "1",
+	})
+	testProducer(k, testTopic, kafka.PublicationData{
+		Value: []byte("2"),
+		Key:   "asdasd",
+	})
+	testProducer(k, testTopic, kafka.PublicationData{
+		Value: []byte("2"),
+		Key:   "asdasd",
+	})
+	k.StopProduce()
+}

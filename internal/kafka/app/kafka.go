@@ -6,6 +6,6 @@ import (
 )
 
 func Run(configSettings configEntity.Settings, serviceName string) {
-	examples.RunWithKey(configSettings, serviceName)
+	examples.RunWithPublicPublishingData(configSettings, serviceName)
 	select {}
 }

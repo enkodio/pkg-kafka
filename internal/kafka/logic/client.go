@@ -70,15 +70,19 @@ func (c *Client) StopProduce() {
 }
 
 func (c *Client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
-	publicationData, err := entity.NewPublishData(ctx, data)
+	publicationData, err := entity.NewPublicationData(ctx, data)
 	if err != nil {
-		return errors.Wrap(err, "cant get publish data")
+		return errors.Wrap(err, "cant get publication data")
 	}
 	return c.publishByte(ctx, topic, publicationData, headers...)
 }
 
-func (c *Client) publishByte(ctx context.Context, topic string, data entity.PublicationData, headers ...map[string][]byte) (err error) {
-	message := kafka.NewMessage(topic, data.Value, kafka.NewMessageHeaders(headers...), data.Key)
+func (c *Client) publishByte(ctx context.Context, topic string, data kafka.PublicationData, headers ...map[string][]byte) (err error) {
+	value, err := data.GetValue(ctx)
+	if err != nil {
+		return errors.Wrap(err, "cant get publication value")
+	}
+	message := kafka.NewMessage(topic, value, kafka.NewMessageHeaders(headers...), data.GetKey(ctx))
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)

@@ -30,8 +30,8 @@ func NewMessageHeaders(headers ...map[string][]byte) MessageHeaders {
 	return messageHeaders
 }
 
-func (m MessageHeaders) GetValueByKey(key string) []byte {
-	for _, header := range m {
+func (m *MessageHeaders) GetValueByKey(key string) []byte {
+	for _, header := range *m {
 		if header.GetKey() == key {
 			return header.GetValue()
 		}
@@ -46,9 +46,9 @@ func (m *MessageHeaders) SetHeader(key string, value []byte) {
 	})
 }
 
-func (m MessageHeaders) toKafkaHeaders() []kafka.Header {
-	var headers = make([]kafka.Header, len(m))
-	for i, header := range m {
+func (m *MessageHeaders) toKafkaHeaders() []kafka.Header {
+	var headers = make([]kafka.Header, len(*m))
+	for i, header := range *m {
 		headers[i] = kafka.Header{
 			Key:   header.GetKey(),
 			Value: header.GetValue(),

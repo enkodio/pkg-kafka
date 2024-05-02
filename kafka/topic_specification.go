@@ -1,6 +1,4 @@
-package entity
-
-import "github.com/enkodio/pkg-kafka/kafka"
+package kafka
 
 const (
 	// Значение реплик каждой партиции по умолчанию
@@ -11,6 +9,13 @@ const (
 	maxReplicationFactor = 3
 )
 
+type Specifications interface {
+	GetTopic() string
+	GetNumPartitions() int
+	GetReplicationFactor() int
+	GetCheckError() bool
+}
+
 type TopicSpecifications struct {
 	Topic             string
 	NumPartitions     int
@@ -18,7 +23,7 @@ type TopicSpecifications struct {
 	CheckError        bool
 }
 
-func NewTopicSpecifications(specifications kafka.Specifications) TopicSpecifications {
+func NewTopicSpecifications(specifications Specifications) TopicSpecifications {
 	return TopicSpecifications{
 		Topic:             specifications.GetTopic(),
 		NumPartitions:     specifications.GetNumPartitions(),

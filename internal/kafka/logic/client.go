@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	cKafka "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/enkodio/pkg-kafka/internal/kafka/entity"
 	"github.com/enkodio/pkg-kafka/internal/pkg/logger"
@@ -71,20 +70,19 @@ func (c *Client) StopProduce() {
 }
 
 func (c *Client) Publish(ctx context.Context, topic string, data interface{}, headers ...map[string][]byte) (err error) {
-	var dataB []byte
-	if dataS, ok := data.(string); ok {
-		dataB = []byte(dataS)
-	} else {
-		dataB, err = json.Marshal(data)
-		if err != nil {
-			return errors.Wrap(err, "cant marshal data")
-		}
+	publicationData, err := entity.NewPublicationData(ctx, data)
+	if err != nil {
+		return errors.Wrap(err, "cant get publication data")
 	}
-	return c.publishByte(ctx, topic, dataB, headers...)
+	return c.publishByte(ctx, topic, publicationData, headers...)
 }
 
-func (c *Client) publishByte(ctx context.Context, topic string, data []byte, headers ...map[string][]byte) (err error) {
-	message := kafka.NewMessage(topic, data, kafka.NewMessageHeaders(headers...), "")
+func (c *Client) publishByte(ctx context.Context, topic string, data kafka.PublicationData, headers ...map[string][]byte) (err error) {
+	value, err := data.GetValue(ctx)
+	if err != nil {
+		return errors.Wrap(err, "cant get publication value")
+	}
+	message := kafka.NewMessage(topic, value, kafka.NewMessageHeaders(headers...), data.GetKey(ctx))
 	message.Topic = c.topicPrefix + message.Topic
 	message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)
@@ -92,7 +90,7 @@ func (c *Client) publishByte(ctx context.Context, topic string, data []byte, hea
 
 func (c *Client) Subscribe(h kafka.Handler, countConsumers int, specification kafka.Specifications) {
 	log := logger.GetLogger()
-	topicSpecification := entity.NewTopicSpecifications(specification)
+	topicSpecification := kafka.NewTopicSpecifications(specification)
 	topicSpecification.Topic = c.topicPrefix + topicSpecification.Topic
 	for j := 0; j < countConsumers; j++ {
 		err := c.consumers.addNewConsumer(h, topicSpecification)
@@ -101,6 +99,7 @@ func (c *Client) Subscribe(h kafka.Handler, countConsumers int, specification ka
 		}
 	}
 }
+
 func (c *Client) PrePublish(f kafka.Pre) {
 	c.producer.prePublish = append(c.producer.prePublish, f)
 }

@@ -84,7 +84,7 @@ func (c *Client) publishByte(ctx context.Context, topic string, data kafka.Publi
 	}
 	message := kafka.NewMessage(topic, value, kafka.NewMessageHeaders(headers...), data.GetKey(ctx))
 	message.Topic = c.topicPrefix + message.Topic
-	message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
+	//message.Headers.SetHeader(serviceNameHeaderKey, []byte(c.serviceName))
 	return c.producer.publish(ctx, message)
 }
 

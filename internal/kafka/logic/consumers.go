@@ -83,8 +83,9 @@ func (c *consumers) stopConsumers() {
 
 func (c *consumers) initConsumers() {
 	once := &sync.Once{}
+	c.syncGroup.NewDoneChan()
 	// Запускаем каждого консумера в отдельной горутине
-	for _, cns := range c.consumers {
+	for i := range c.consumers {
 		c.syncGroup.Add(1)
 		go func(consumer *consumer, syncGroup *entity.SyncGroup) {
 			err := consumer.startConsume(syncGroup, c.mwFuncs)
@@ -94,7 +95,7 @@ func (c *consumers) initConsumers() {
 					c.reconnect()
 				})
 			}
-		}(cns, c.syncGroup)
+		}(c.consumers[i], c.syncGroup)
 	}
 	c.syncGroup.Start()
 	logger.GetLogger().Info("KAFKA CONSUMERS IS READY")

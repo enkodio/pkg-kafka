@@ -47,7 +47,10 @@ func (s *SyncGroup) IsDone() <-chan struct{} {
 	return s.done
 }
 
+func (s *SyncGroup) NewDoneChan() {
+	s.done = make(chan struct{})
+}
+
 func (s *SyncGroup) Start() {
 	s.closed = false
-	s.done = make(chan struct{})
 }
